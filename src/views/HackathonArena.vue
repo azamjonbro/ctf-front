@@ -7,8 +7,10 @@
       <!-- Hackathon Header Capsule -->
       <div class="p-6 rounded-lg glass-panel border border-cyber-primary/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div class="space-y-1">
-          <span class="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded font-bold bg-cyber-primary text-[#0B1020]">
-            FAOL XAKATON ARENASI
+          <span class="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded font-bold"
+            :class="hackathon.status === 'running' ? 'bg-cyber-primary text-[#0B1020]' : 'bg-slate-700 text-slate-300'"
+          >
+            {{ hackathon.status === 'running' ? 'FAOL XAKATON ARENASI' : 'YAKUNLANGAN XAKATON ARENASI' }}
           </span>
           <h1 class="text-3xl font-extrabold text-white font-mono uppercase tracking-wide mt-2">{{ hackathon.name }}</h1>
           <p class="text-slate-400 text-xs leading-relaxed max-w-2xl">{{ hackathon.description }}</p>
@@ -20,8 +22,12 @@
             <span class="text-lg font-bold text-white block mt-1">{{ hackathon.maxTeams }}</span>
           </div>
           <div class="p-4 bg-white/5 rounded border border-white/5 font-mono text-center min-w-[120px]">
-            <span class="text-[9px] text-slate-500 block uppercase">Ro'yxatdan o'tish holati</span>
-            <span class="text-xs font-bold text-cyber-secondary block mt-1">RO'YXATDAN O'TGANLAR UCHUN OCHIQ</span>
+            <span class="text-[9px] text-slate-500 block uppercase">Xakaton holati</span>
+            <span class="text-xs font-bold block mt-1 uppercase"
+              :class="hackathon.status === 'running' ? 'text-cyber-secondary' : 'text-slate-400'"
+            >
+              {{ hackathon.status === 'running' ? 'FAOL' : 'YAKUNLANGAN' }}
+            </span>
           </div>
         </div>
       </div>

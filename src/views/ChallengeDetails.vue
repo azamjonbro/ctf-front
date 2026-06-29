@@ -49,6 +49,17 @@
         <h2 class="text-lg font-bold font-mono text-white border-b border-white/5 pb-2 uppercase">// TOPSHIRIQ HAQIDA UMUMIY MA'LUMOT</h2>
         <div class="text-slate-300 text-sm leading-relaxed max-w-none font-sans" v-html="challenge.longDescription"></div>
         
+        <!-- Challenge-level Attachments -->
+        <div v-if="challenge.attachments && challenge.attachments.length > 0" class="p-4 rounded bg-[#131C35]/40 border border-white/5 space-y-2 font-mono text-xs">
+          <span class="text-[10px] text-slate-500 block uppercase font-bold tracking-wider">// Biriktirilgan fayllar (Challenge Attachments)</span>
+          <div class="flex flex-wrap gap-3">
+            <a v-for="(url, idx) in challenge.attachments" :key="idx" :href="url" download class="flex items-center space-x-2 text-[10px] font-mono text-cyber-primary hover:text-white bg-[#0B1020]/80 px-3 py-1.5 rounded border border-cyber-primary/20 transition">
+              <svg class="h-3 w-3 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Resursni yuklab olish [{{ idx + 1 }}]</span>
+            </a>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 font-mono text-xs text-slate-400">
           <div class="p-4 bg-slate-950/40 rounded border border-white/5 space-y-1">
             <span class="text-slate-500 block uppercase text-[10px]">Umumiy savollar</span>
@@ -74,6 +85,17 @@
       <!-- IF JOINED: ACTIVE SESSION WORKSPACE -->
       <div v-else class="space-y-8 animate-fade-in">
         
+        <!-- Challenge-level Attachments -->
+        <div v-if="challenge.attachments && challenge.attachments.length > 0" class="p-4 rounded bg-[#131C35]/40 border border-white/5 space-y-2 font-mono text-xs">
+          <span class="text-[10px] text-slate-500 block uppercase font-bold tracking-wider">// Biriktirilgan fayllar (Challenge Attachments)</span>
+          <div class="flex flex-wrap gap-3">
+            <a v-for="(url, idx) in challenge.attachments" :key="idx" :href="url" download class="flex items-center space-x-2 text-[10px] font-mono text-cyber-primary hover:text-white bg-[#0B1020]/80 px-3 py-1.5 rounded border border-cyber-primary/20 transition">
+              <svg class="h-3 w-3 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Resursni yuklab olish [{{ idx + 1 }}]</span>
+            </a>
+          </div>
+        </div>
+
         <!-- SECTION 1: QUESTIONS AREA -->
         <div class="space-y-4">
           <h2 class="text-xs font-mono font-bold uppercase text-slate-400 tracking-widest pl-1">// 1. BILIMNI TEKSHIRISH UCHUN SAVOLLAR ({{ challenge.questions.length }} ta tugun)</h2>
@@ -91,14 +113,6 @@
                   <span class="px-2 py-0.5 rounded font-mono text-[9px] font-bold bg-[#131C35] text-cyber-secondary border border-white/15">{{ q.points }} ball</span>
                 </div>
                 <p class="text-xs text-slate-300 leading-relaxed">{{ q.description }}</p>
-
-                <!-- Attachments visualizer -->
-                <div v-if="q.attachments && q.attachments.length > 0" class="p-3 bg-slate-950/40 rounded border border-white/5 flex flex-wrap gap-2 mt-2">
-                  <a v-for="(url, urlIndex) in q.attachments" :key="urlIndex" :href="url" download class="flex items-center space-x-2 text-[10px] font-mono text-slate-400 hover:text-white transition">
-                    <svg class="h-3 w-3 stroke-current text-cyber-primary" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    <span>Resursni yuklab olish [{{ urlIndex + 1 }}]</span>
-                  </a>
-                </div>
 
                 <!-- Simple Hint block -->
                 <div v-if="q.hint" class="pt-1">

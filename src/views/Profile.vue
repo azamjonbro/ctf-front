@@ -265,12 +265,12 @@
                   <span 
                     class="px-1.5 py-0.5 text-[9px] font-mono rounded"
                     :class="{
-                      'bg-cyber-primary/10 text-cyber-primary border border-cyber-primary/20': hack.status === 'active',
-                      'bg-slate-800 text-slate-400 border border-slate-700': hack.status === 'completed',
-                      'bg-blue-500/10 text-blue-400 border border-blue-500/20': hack.status === 'upcoming'
+                      'bg-cyber-primary/10 text-cyber-primary border border-cyber-primary/20': hack.status === 'running',
+                      'bg-slate-800 text-slate-400 border border-slate-700': hack.status === 'finished',
+                      'bg-blue-500/10 text-blue-400 border border-blue-500/20': hack.status === 'open' || hack.status === 'closed'
                     }"
                   >
-                    {{ hack.status.toUpperCase() }}
+                    {{ hack.status === 'running' ? 'RUNNING' : hack.status === 'finished' ? 'FINISHED' : hack.status.toUpperCase() }}
                   </span>
                 </div>
                 <div class="text-[10px] text-slate-400 font-mono">
@@ -304,6 +304,10 @@
       <div class="w-full max-w-md p-6 rounded-lg bg-[#0B1020] border border-white/10 glass-panel space-y-4">
         <h3 class="text-lg font-bold font-mono text-cyber-primary">// PROFIL MA'LUMOTLARINI TAHRIRLASH</h3>
         <form @submit.prevent="handleUpdateProfile" class="space-y-4 text-xs font-mono">
+          <div class="space-y-1">
+            <label class="text-[10px] text-slate-400 uppercase">Foydalanuvchi nomi (Username)</label>
+            <input v-model="editForm.username" type="text" class="w-full bg-[#131C35] border border-white/10 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-cyber-primary" required />
+          </div>
           <div class="grid grid-cols-2 gap-3">
             <div class="space-y-1">
               <label class="text-[10px] text-slate-400 uppercase">Ism</label>
@@ -344,6 +348,25 @@
             <label class="text-[10px] text-slate-400 uppercase">Ma'lumotlar/Qurilma sozlamalari</label>
             <textarea v-model="editForm.information" rows="3" class="w-full bg-[#131C35] border border-white/10 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-cyber-primary" placeholder="Qurilma sozlamalari haqida ma'lumot kiriting..."></textarea>
           </div>
+          
+          <div class="border-t border-white/5 pt-3 mt-3 space-y-3">
+            <span class="text-[10px] text-cyber-secondary font-bold uppercase tracking-wider block">// Parolni o'zgartirish (Ixtiyoriy)</span>
+            <div class="space-y-1">
+              <label class="text-[9px] text-slate-500 uppercase">Joriy parol (Eski parol)</label>
+              <input v-model="editForm.oldPassword" type="password" placeholder="••••••••" class="w-full bg-[#131C35] border border-white/10 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-cyber-primary text-xs" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="space-y-1">
+                <label class="text-[9px] text-slate-500 uppercase">Yangi parol</label>
+                <input v-model="editForm.newPassword" type="password" placeholder="••••••••" class="w-full bg-[#131C35] border border-white/10 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-cyber-primary text-xs" />
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] text-slate-500 uppercase">Tasdiqlash</label>
+                <input v-model="editForm.confirmPassword" type="password" placeholder="••••••••" class="w-full bg-[#131C35] border border-white/10 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-cyber-primary text-xs" />
+              </div>
+            </div>
+          </div>
+
           <div class="flex justify-end space-x-2 pt-2">
             <button type="button" @click="showEditModal = false" class="px-3 py-1.5 bg-white/5 rounded text-slate-300">BEKOR QILISH</button>
             <button type="submit" class="px-4 py-1.5 bg-cyber-primary text-[#0B1020] font-bold rounded">O'ZGARISHLARNI SAQLASH</button>
@@ -356,12 +379,13 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import api from '../utils/api.js';
 import { useAuthStore } from '../stores/auth.js';
 
 const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 const authStore = useAuthStore();
 const profile = ref(null);
@@ -378,13 +402,17 @@ const isOwnProfile = computed(() => {
 const profilePicInput = ref(null);
 const showEditModal = ref(false);
 const editForm = ref({
+  username: '',
   name: '',
   surname: '',
   age: null,
   country: '',
   description: '',
   information: '',
-  profilePicture: ''
+  profilePicture: '',
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
 });
 
 const onProfilePicUpload = async (event) => {
@@ -411,13 +439,17 @@ const onProfilePicUpload = async (event) => {
 const openEditModal = () => {
   if (!profile.value) return;
   editForm.value = {
+    username: profile.value.username || '',
     name: profile.value.name || '',
     surname: profile.value.surname || '',
     age: profile.value.age || null,
     country: profile.value.country || '',
     description: profile.value.description || '',
     information: profile.value.information || '',
-    profilePicture: profile.value.profilePicture || ''
+    profilePicture: profile.value.profilePicture || '',
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   };
   showEditModal.value = true;
 };
@@ -427,7 +459,15 @@ const handleUpdateProfile = async () => {
     const res = await api.put('/users/profile', editForm.value);
     toast.success(res.data.message);
     showEditModal.value = false;
-    loadProfile();
+    
+    if (editForm.value.username && editForm.value.username.toLowerCase() !== profile.value.username.toLowerCase()) {
+      const updatedUser = { ...authStore.user, username: editForm.value.username.toLowerCase() };
+      authStore.user = updatedUser;
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      router.push(`/profile/${editForm.value.username.toLowerCase()}`);
+    } else {
+      loadProfile();
+    }
   } catch (error) {
     const msg = error?.error?.message || 'Profilni yangilash muvaffaqiyatsiz tugadi';
     toast.error(msg);
