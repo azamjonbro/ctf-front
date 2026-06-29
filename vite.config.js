@@ -14,17 +14,17 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5001',
+        target: 'https://ctf.techinfo.uz',
         changeOrigin: true,
         secure: false,
       },
       '/socket.io': {
-        target: 'http://localhost:5001',
+        target: 'https://ctf.techinfo.uz',
         ws: true,
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'http://localhost:5001',
+        target: 'https://ctf.techinfo.uz',
         changeOrigin: true,
       }
     }
