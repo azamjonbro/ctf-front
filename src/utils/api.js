@@ -7,7 +7,7 @@ import { useAuthStore } from '../stores/auth.js';
 NProgress.configure({ showSpinner: false, speed: 400 });
 
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: import.meta.env.DEV ? '/api/v1' : 'https://ctf.techinfo.uz/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },

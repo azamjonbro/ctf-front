@@ -14,7 +14,7 @@ export const useSocketStore = defineStore('socket', {
       const authStore = useAuthStore();
       if (!authStore.accessToken || this.socket) return;
 
-      this.socket = io({
+      this.socket = io(import.meta.env.DEV ? '/' : 'https://ctf.techinfo.uz', {
         auth: {
           token: authStore.accessToken
         }
