@@ -14,17 +14,17 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://ctf.techinfo.uz',
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:5001',
         changeOrigin: true,
         secure: false,
       },
       '/socket.io': {
-        target: 'https://ctf.techinfo.uz',
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:5001',
         ws: true,
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'https://ctf.techinfo.uz',
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:5001',
         changeOrigin: true,
       }
     }

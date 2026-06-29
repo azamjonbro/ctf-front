@@ -38,7 +38,13 @@
         <div class="lg:col-span-2 space-y-4">
           <h3 class="text-sm font-bold font-mono text-white uppercase tracking-wider pl-1">// Xakaton topshiriqlari ko'rsatmalari</h3>
           
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div v-if="hackathon.status === 'finished'" class="p-8 rounded bg-cyber-card border border-white/10 text-center font-mono text-xs text-slate-400 space-y-3 py-16">
+            <span class="text-4xl block mb-2">🏁</span>
+            <span class="text-white font-extrabold text-sm block">XAKATON YAKUNLANDI</span>
+            <span>Musobaqa o'z nihoyasiga yetdi. Faqat natijalar va jamoalar reytingi ko'rinadi.</span>
+          </div>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div
               v-for="c in challenges"
               :key="c._id"

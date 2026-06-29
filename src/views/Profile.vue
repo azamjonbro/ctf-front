@@ -455,6 +455,30 @@ const openEditModal = () => {
 };
 
 const handleUpdateProfile = async () => {
+  // Client-side validations
+  if (editForm.value.username) {
+    const normalized = editForm.value.username.trim().toLowerCase();
+    if (!/^[a-zA-Z0-9]{3,30}$/.test(normalized)) {
+      toast.error('Username faqat harf va sonlardan iborat bo\'lishi hamda 3-30 belgidan iborat bo\'lishi kerak.');
+      return;
+    }
+  }
+
+  if (editForm.value.newPassword) {
+    if (!editForm.value.oldPassword) {
+      toast.error('Joriy parolni kiritish majburiy.');
+      return;
+    }
+    if (editForm.value.newPassword !== editForm.value.confirmPassword) {
+      toast.error('Yangi parol va uni tasdiqlash mos kelmadi.');
+      return;
+    }
+    if (editForm.value.newPassword.length < 8) {
+      toast.error('Yangi parol kamida 8 ta belgidan iborat bo\'lishi kerak.');
+      return;
+    }
+  }
+
   try {
     const res = await api.put('/users/profile', editForm.value);
     toast.success(res.data.message);

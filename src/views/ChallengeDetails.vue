@@ -34,6 +34,10 @@
             <span class="text-2xl font-bold block mt-1" :class="timeRemaining <= 300 ? 'text-cyber-danger animate-pulse' : 'text-cyber-secondary'">
               {{ formatTime(timeRemaining) }}
             </span>
+            <span class="text-[10px] text-slate-500 block uppercase tracking-wider mt-2">Xato urinishlar</span>
+            <span class="text-sm font-bold block" :class="(challenge?.failedAttempts || 0) >= 4 ? 'text-cyber-danger' : 'text-white'">
+              {{ challenge?.failedAttempts || 0 }} / 5
+            </span>
           </template>
           <template v-else>
             <span class="text-[10px] text-slate-500 block uppercase tracking-wider mb-2">Davomiyligi: {{ challenge.timerMinutes }} daqiqa</span>
@@ -96,6 +100,30 @@
           </div>
         </div>
 
+        <!-- Challenge-level Global Hint -->
+        <div v-if="challenge.hasHint" class="p-4 rounded bg-[#131C35]/40 border border-white/5 space-y-3 font-mono text-xs">
+          <span class="text-[10px] text-slate-500 block uppercase font-bold tracking-wider">// Topshiriq Maslahati (Challenge Hint)</span>
+          
+          <div v-if="challenge.hintUsed" class="p-3 bg-[#0B1020]/80 rounded border border-cyber-secondary/30 text-slate-300">
+            <span class="text-cyber-secondary font-bold uppercase block mb-1">MASLAHAT KEYI:</span>
+            <p class="italic text-xs font-sans text-slate-200">{{ challenge.challengeHint }}</p>
+          </div>
+          
+          <div v-else class="space-y-2">
+            <p class="text-[10px] text-yellow-500 uppercase tracking-wider font-bold animate-pulse font-mono">
+              ⚠️ Using this hint will permanently reduce this challenge score by 20% for your team.
+            </p>
+            <button
+              type="button"
+              @click="confirmAndUnlockHint"
+              :disabled="isUnlockingHint"
+              class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded uppercase tracking-wider transition disabled:opacity-50 text-[10px] font-mono"
+            >
+              {{ isUnlockingHint ? 'MASLAHAT OCHILMOQDA...' : 'Maslahatni ochish (20% Jarima)' }}
+            </button>
+          </div>
+        </div>
+
         <!-- SECTION 1: QUESTIONS AREA -->
         <div class="space-y-4">
           <h2 class="text-xs font-mono font-bold uppercase text-slate-400 tracking-widest pl-1">// 1. BILIMNI TEKSHIRISH UCHUN SAVOLLAR ({{ challenge.questions.length }} ta tugun)</h2>
@@ -130,6 +158,10 @@
                 <div v-if="q.isSolved" class="text-center font-mono p-3 bg-cyber-primary/10 border border-cyber-primary/20 rounded">
                   <span class="text-cyber-primary text-xs font-bold block">✓ TO'G'RI TASDIQLANDI</span>
                   <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Ballar berildi</span>
+                </div>
+                <div v-else-if="(challenge?.failedAttempts || 0) >= 5" class="text-center font-mono p-3 bg-cyber-danger/10 border border-cyber-danger/20 rounded">
+                  <span class="text-cyber-danger text-xs font-bold block">🔒 URUNISHLAR TUGADI</span>
+                  <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Topshiriq bloklandi (5 ta xato)</span>
                 </div>
                 <form v-else @submit.prevent="submitQuestionAnswer(q.id)" class="space-y-2">
                   <label class="text-[9px] font-mono uppercase text-slate-500 block">Javobni yuborish</label>
@@ -179,7 +211,10 @@
                   <span class="text-cyber-secondary text-xs font-bold block">✓ FLAG QO'LGA KIRITILDI</span>
                   <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Jarayon yangilandi</span>
                 </div>
-                
+                <div v-else-if="(challenge?.failedAttempts || 0) >= 5" class="text-center font-mono p-3 bg-cyber-danger/10 border border-cyber-danger/20 rounded">
+                  <span class="text-cyber-danger text-xs font-bold block">🔒 URUNISHLAR TUGADI</span>
+                  <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Topshiriq bloklandi (5 ta xato)</span>
+                </div>
                 <form v-else @submit.prevent="submitChallengeFlag(index - 1)" class="space-y-2">
                   <label class="text-[9px] font-mono uppercase text-slate-500 block">Flagni kiritish</label>
                   <div class="flex gap-2">
@@ -359,6 +394,9 @@ const submitQuestionAnswer = async (questionId) => {
   } catch (error) {
     const msg = error?.error?.message || 'Noto\'g\'ri javob';
     toast.error(msg);
+    if (challenge.value && challenge.value.failedAttempts !== undefined) {
+      challenge.value.failedAttempts++;
+    }
   } finally {
     isSubmittingQuestion.value[questionId] = false;
   }
@@ -380,8 +418,37 @@ const submitChallengeFlag = async (flagIndex) => {
   } catch (error) {
     const msg = error?.error?.message || 'Noto\'g\'ri flag';
     toast.error(msg);
+    if (challenge.value && challenge.value.failedAttempts !== undefined) {
+      challenge.value.failedAttempts++;
+    }
   } finally {
     isSubmittingFlag.value[flagIndex] = false;
+  }
+};
+
+const isUnlockingHint = ref(false);
+
+const confirmAndUnlockHint = async () => {
+  const confirmUnlock = confirm('Ushbu maslahatdan foydalanish jamoangiz to\'plagan/to\'playdigan ballarini 20% ga kamaytiradi. Ishonchingiz komilmi?');
+  if (!confirmUnlock) return;
+
+  isUnlockingHint.value = true;
+  try {
+    const res = await api.post(`/ctfs/${route.params.challengeId}/hint/unlock`);
+    toast.success(res.data.message || 'Maslahat muvaffaqiyatli ochildi!');
+    
+    // Update local state
+    if (challenge.value) {
+      challenge.value.hintUsed = true;
+      challenge.value.challengeHint = res.data.data.hint;
+    }
+    // Re-load details to update calculations
+    await loadChallengeDetails();
+  } catch (error) {
+    const msg = error?.error?.message || 'Maslahatni ochish muvaffaqiyatsiz tugadi';
+    toast.error(msg);
+  } finally {
+    isUnlockingHint.value = false;
   }
 };
 
