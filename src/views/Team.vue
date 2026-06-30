@@ -41,6 +41,17 @@
               <span class="text-[10px] text-cyber-secondary uppercase font-bold select-none cursor-pointer" @click="copyCode">Nusxalash</span>
             </div>
           </div>
+
+          <!-- Leave Team Button -->
+          <div class="pt-4 border-t border-white/5">
+            <button
+              @click="handleLeaveTeam"
+              :disabled="isLeaving"
+              class="w-full py-2 bg-red-500/20 hover:bg-red-500/35 border border-red-500/40 text-red-200 text-xs font-bold font-mono rounded transition disabled:opacity-50"
+            >
+              {{ isLeaving ? 'JAMOADAN CHIQILMOQDA...' : "JAMOANI TARK ETISH" }}
+            </button>
+          </div>
         </div>
 
         <!-- Roster Column -->
@@ -172,6 +183,25 @@ const handleJoinTeam = async () => {
   } catch (error) {
     const msg = error?.error?.message || 'Jamoaga qo\'shilish muvaffaqiyatsiz tugadi: taklif kodini tekshiring.';
     toast.error(msg);
+  }
+};
+
+const isLeaving = ref(false);
+
+const handleLeaveTeam = async () => {
+  const confirmLeave = confirm('Haqiqatan ham ushbu jamoani tark etmoqchimisiz? Agar siz sardor bo\'lsangiz, sardorlik boshqa a\'zoga o\'tadi. Agar oxirgi a\'zo bo\'lsangiz, jamoa o\'chib ketadi.');
+  if (!confirmLeave) return;
+
+  isLeaving.value = true;
+  try {
+    const res = await api.post('/teams/leave');
+    toast.success(res.data.message || 'Jamoani muvaffaqiyatli tark etdingiz!');
+    loadTeam();
+  } catch (error) {
+    const msg = error?.error?.message || 'Jamoani tark etish muvaffaqiyatsiz tugadi';
+    toast.error(msg);
+  } finally {
+    isLeaving.value = false;
   }
 };
 

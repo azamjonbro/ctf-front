@@ -159,12 +159,12 @@
                   <span class="text-cyber-primary text-xs font-bold block">✓ TO'G'RI TASDIQLANDI</span>
                   <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Ballar berildi</span>
                 </div>
-                <div v-else-if="(challenge?.failedAttempts || 0) >= 5" class="text-center font-mono p-3 bg-cyber-danger/10 border border-cyber-danger/20 rounded">
+                <div v-else-if="getQuestionFailedAttempts(q.id) >= 5" class="text-center font-mono p-3 bg-cyber-danger/10 border border-cyber-danger/20 rounded">
                   <span class="text-cyber-danger text-xs font-bold block">🔒 URUNISHLAR TUGADI</span>
-                  <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Topshiriq bloklandi (5 ta xato)</span>
+                  <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Savol bloklandi (5 ta xato)</span>
                 </div>
                 <form v-else @submit.prevent="submitQuestionAnswer(q.id)" class="space-y-2">
-                  <label class="text-[9px] font-mono uppercase text-slate-500 block">Javobni yuborish</label>
+                  <label class="text-[9px] font-mono uppercase text-slate-500 block">Javobni yuborish (Urinishlar: {{ getQuestionFailedAttempts(q.id) }} / 5)</label>
                   <div class="flex gap-2">
                     <input
                       v-model="questionSubmissions[q.id]"
@@ -211,12 +211,12 @@
                   <span class="text-cyber-secondary text-xs font-bold block">✓ FLAG QO'LGA KIRITILDI</span>
                   <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Jarayon yangilandi</span>
                 </div>
-                <div v-else-if="(challenge?.failedAttempts || 0) >= 5" class="text-center font-mono p-3 bg-cyber-danger/10 border border-cyber-danger/20 rounded">
+                <div v-else-if="getFlagFailedAttempts(index - 1) >= 5" class="text-center font-mono p-3 bg-cyber-danger/10 border border-cyber-danger/20 rounded">
                   <span class="text-cyber-danger text-xs font-bold block">🔒 URUNISHLAR TUGADI</span>
-                  <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Topshiriq bloklandi (5 ta xato)</span>
+                  <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Flag bloklandi (5 ta xato)</span>
                 </div>
                 <form v-else @submit.prevent="submitChallengeFlag(index - 1)" class="space-y-2">
-                  <label class="text-[9px] font-mono uppercase text-slate-500 block">Flagni kiritish</label>
+                  <label class="text-[9px] font-mono uppercase text-slate-500 block">Flagni kiritish (Urinishlar: {{ getFlagFailedAttempts(index - 1) }} / 5)</label>
                   <div class="flex gap-2">
                     <button
                       type="button"
@@ -316,6 +316,16 @@ const allFlagsSolved = computed(() => {
   return solvedFlags.value.length === challenge.value.flagsCount;
 });
 
+const getQuestionFailedAttempts = (questionId) => {
+  const attempt = challenge.value?.questionAttempts?.find(qa => qa.questionId === questionId);
+  return attempt ? attempt.failedAttempts : 0;
+};
+
+const getFlagFailedAttempts = (flagIndex) => {
+  const attempt = challenge.value?.flagAttempts?.find(fa => fa.flagIndex === flagIndex);
+  return attempt ? attempt.failedAttempts : 0;
+};
+
 const loadChallengeDetails = async () => {
   try {
     const res = await api.get(`/ctfs/${route.params.challengeId}`);
@@ -385,18 +395,11 @@ const submitQuestionAnswer = async (questionId) => {
       answer: ans
     });
     toast.success(res.data.message || 'To\'g\'ri javob!');
-    
-    // Mark as solved on UI
-    const question = challenge.value.questions.find(q => q.id === questionId);
-    if (question) {
-      question.isSolved = true;
-    }
+    await loadChallengeDetails();
   } catch (error) {
     const msg = error?.error?.message || 'Noto\'g\'ri javob';
     toast.error(msg);
-    if (challenge.value && challenge.value.failedAttempts !== undefined) {
-      challenge.value.failedAttempts++;
-    }
+    await loadChallengeDetails();
   } finally {
     isSubmittingQuestion.value[questionId] = false;
   }
@@ -412,15 +415,11 @@ const submitChallengeFlag = async (flagIndex) => {
       flag: flagVal
     });
     toast.success('To\'g\'ri flag tasdiqlandi!');
-    if (!solvedFlags.value.includes(flagIndex)) {
-      solvedFlags.value.push(flagIndex);
-    }
+    await loadChallengeDetails();
   } catch (error) {
     const msg = error?.error?.message || 'Noto\'g\'ri flag';
     toast.error(msg);
-    if (challenge.value && challenge.value.failedAttempts !== undefined) {
-      challenge.value.failedAttempts++;
-    }
+    await loadChallengeDetails();
   } finally {
     isSubmittingFlag.value[flagIndex] = false;
   }
