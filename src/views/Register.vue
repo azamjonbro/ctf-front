@@ -125,6 +125,28 @@
           <span v-if="v$.password.$error" class="text-[10px] text-cyber-danger font-mono block">Minimal uzunlik - 8 ta belgi</span>
         </div>
 
+        <!-- Mathematical Captcha -->
+        <div class="space-y-1">
+          <label class="text-xs uppercase font-mono tracking-wider text-slate-400 block">Matematik captcha: <span class="text-cyber-secondary font-bold">{{ captchaQuestion }}</span></label>
+          <div class="flex gap-2">
+            <input
+              v-model="state.captchaAnswer"
+              type="text"
+              placeholder="Javobingiz"
+              class="flex-1 bg-cyber-card border border-white/10 rounded px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyber-primary font-mono"
+              required
+            />
+            <button
+              type="button"
+              @click="loadCaptcha"
+              class="px-3 bg-slate-800 border border-white/10 rounded text-slate-300 hover:bg-slate-700 transition text-xs font-mono"
+              title="Yangilash"
+            >
+              🔄
+            </button>
+          </div>
+        </div>
+
         <button
           type="submit"
           :disabled="isLoading"
@@ -147,6 +169,7 @@ import { reactive, ref, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/auth.js';
 import { useToast } from 'vue-toastification';
 import { useRouter } from 'vue-router';
+import api from '../utils/api.js';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email, minLength } from '@vuelidate/validators';
 
@@ -162,8 +185,22 @@ const matrixCanvas = ref(null);
 const state = reactive({
   username: '',
   email: '',
-  password: ''
+  password: '',
+  captchaAnswer: ''
 });
+
+const captchaId = ref('');
+const captchaQuestion = ref('');
+
+const loadCaptcha = async () => {
+  try {
+    const res = await api.get('/auth/captcha');
+    captchaId.value = res.data.data.captchaId;
+    captchaQuestion.value = res.data.data.question;
+  } catch (error) {
+    toast.error('Kaptchani yuklashda xatolik yuz berdi');
+  }
+};
 
 const rules = {
   username: { required, minLength: minLength(3) },
@@ -188,7 +225,10 @@ const handleRegister = async () => {
   }, 100);
 
   try {
-    await authStore.userRegister(state);
+    await authStore.userRegister({
+      ...state,
+      captchaId: captchaId.value
+    });
     
     setTimeout(() => {
       clearInterval(progressInterval);
@@ -200,6 +240,8 @@ const handleRegister = async () => {
     clearInterval(progressInterval);
     isRegistering.value = false;
     isLoading.value = false;
+    state.captchaAnswer = '';
+    loadCaptcha();
     const errorMsg = error?.error?.message || 'Ro\'yxatdan o\'tish muvaffaqiyatsiz tugadi';
     toast.error(errorMsg);
   }
@@ -253,6 +295,7 @@ const initMatrix = () => {
 };
 
 onMounted(() => {
+  loadCaptcha();
   setTimeout(() => {
     cleanupMatrix = initMatrix();
   }, 100);
