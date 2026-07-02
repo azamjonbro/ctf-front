@@ -146,7 +146,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import api from '../utils/api.js';
@@ -157,6 +157,27 @@ const hackathons = ref([]);
 const myTeam = ref(null);
 const registeredTeams = ref({});
 const expandedHackathons = ref({});
+const countdownInterval = ref(null);
+
+const startCountdownTimer = () => {
+  if (countdownInterval.value) {
+    clearInterval(countdownInterval.value);
+  }
+  countdownInterval.value = setInterval(() => {
+    let hasZeroed = false;
+    hackathons.value.forEach(h => {
+      if (h.countdownSeconds > 0) {
+        h.countdownSeconds--;
+        if (h.countdownSeconds === 0) {
+          hasZeroed = true;
+        }
+      }
+    });
+    if (hasZeroed) {
+      loadHackathons();
+    }
+  }, 1000);
+};
 
 const formatCountdown = (secs) => {
   const d = Math.floor(secs / (3600 * 24));
@@ -183,6 +204,7 @@ const loadHackathons = async () => {
   try {
     const res = await api.get('/hackathons');
     hackathons.value = res.data.data;
+    startCountdownTimer();
   } catch (error) {
     toast.error('Xakatonlarni yuklab bo\'lmadi.');
   }
@@ -227,5 +249,11 @@ const enterHackathon = (hackathonId) => {
 onMounted(() => {
   loadHackathons();
   loadMyTeam();
+});
+
+onUnmounted(() => {
+  if (countdownInterval.value) {
+    clearInterval(countdownInterval.value);
+  }
 });
 </script>
