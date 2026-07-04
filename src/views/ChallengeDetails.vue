@@ -143,13 +143,25 @@
                 <p class="text-xs text-slate-300 leading-relaxed">{{ q.description }}</p>
 
                 <!-- Simple Hint block -->
-                <div v-if="q.hint" class="pt-1">
-                  <button type="button" @click="visibleHints[q.id] = !visibleHints[q.id]" class="text-[9px] font-mono text-cyber-secondary hover:underline uppercase tracking-wider">
-                    {{ visibleHints[q.id] ? '[ Maslahatni yashirish ]' : '[ Maslahatni ko\'rsatish ]' }}
-                  </button>
-                  <p v-if="visibleHints[q.id]" class="text-[10px] font-mono text-slate-400 mt-1 italic border-l border-cyber-secondary/30 pl-2">
-                    Maslahat: {{ q.hint }}
-                  </p>
+                <div v-if="q.hasHint" class="pt-1 font-mono text-[9px]">
+                  <template v-if="q.hintUnlocked || q.hint">
+                    <button type="button" @click="visibleHints[q.id] = !visibleHints[q.id]" class="text-cyber-secondary hover:underline uppercase tracking-wider">
+                      {{ visibleHints[q.id] ? '[ Maslahatni yashirish ]' : '[ Maslahatni ko\'rsatish ]' }}
+                    </button>
+                    <p v-if="visibleHints[q.id]" class="text-[10px] font-mono text-slate-400 mt-1 italic border-l border-cyber-secondary/30 pl-2">
+                      Maslahat: {{ q.hint }}
+                    </p>
+                  </template>
+                  <template v-else>
+                    <button 
+                      type="button" 
+                      @click="confirmAndUnlockQuestionHint(q.id)" 
+                      :disabled="isUnlockingQuestionHint[q.id]"
+                      class="text-yellow-600 hover:text-yellow-500 hover:underline uppercase tracking-wider"
+                    >
+                      {{ isUnlockingQuestionHint[q.id] ? '[ Maslahat ochilmoqda... ]' : '[ Maslahatni ochish (20% Jarima) ]' }}
+                    </button>
+                  </template>
                 </div>
               </div>
 
@@ -422,6 +434,32 @@ const submitChallengeFlag = async (flagIndex) => {
     await loadChallengeDetails();
   } finally {
     isSubmittingFlag.value[flagIndex] = false;
+  }
+};
+
+const isUnlockingQuestionHint = ref({});
+
+const confirmAndUnlockQuestionHint = async (questionId) => {
+  const confirmed = confirm("Ushbu savol maslahatini ochish savol ballining 20% kamayishiga (8 ball qolishiga) olib keladi. Rozimisiz?");
+  if (!confirmed) return;
+
+  isUnlockingQuestionHint.value[questionId] = true;
+  try {
+    const res = await api.post(`/ctfs/${challenge.value.challengeId}/questions/${questionId}/hint/unlock`);
+    toast.success("Maslahat muvaffaqiyatli ochildi!");
+    
+    // Update the question object in-place
+    const question = challenge.value.questions.find(q => q.id === questionId);
+    if (question) {
+      question.hint = res.data.data.hint;
+      question.hintUnlocked = true;
+      visibleHints.value[questionId] = true;
+    }
+  } catch (error) {
+    const errorMsg = error?.error?.message || 'Maslahatni ochib bo\'lmadi';
+    toast.error(errorMsg);
+  } finally {
+    isUnlockingQuestionHint.value[questionId] = false;
   }
 };
 

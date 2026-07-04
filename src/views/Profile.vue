@@ -125,7 +125,7 @@
           
           <div class="space-y-4 font-mono text-xs">
             <div class="flex justify-between items-center">
-              <span class="text-slate-400">Jami yechilgan savollar:</span>
+              <span class="text-slate-400">Jami yechilgan topshiriqlar:</span>
               <span class="font-bold text-white">{{ profile.statistics?.totalSolved || 0 }}</span>
             </div>
             
@@ -157,11 +157,6 @@
               <div class="w-full bg-slate-800 h-1.5 rounded overflow-hidden">
                 <div class="bg-cyber-danger h-full" :style="{ width: `${Math.min(100, (profile.statistics?.hardSolved || 0) * 10)}%` }"></div>
               </div>
-            </div>
-
-            <div class="flex justify-between items-center border-t border-white/5 pt-3">
-              <span class="text-slate-400">Ishlatilgan maslahatlar:</span>
-              <span class="font-bold text-cyber-danger">{{ profile.statistics?.hintsUsed || 0 }} ta ishlatilgan</span>
             </div>
           </div>
         </div>
