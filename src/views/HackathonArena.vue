@@ -8,9 +8,9 @@
       <div class="p-6 rounded-lg glass-panel border border-cyber-primary/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div class="space-y-1">
           <span class="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded font-bold"
-            :class="hackathon.status === 'running' ? 'bg-cyber-primary text-[#0B1020]' : 'bg-slate-700 text-slate-300'"
+            :class="hackathon.status === 'active' ? 'bg-cyber-primary text-[#0B1020]' : 'bg-slate-700 text-slate-300'"
           >
-            {{ hackathon.status === 'running' ? 'FAOL XAKATON ARENASI' : 'YAKUNLANGAN XAKATON ARENASI' }}
+            {{ hackathon.status === 'active' ? 'FAOL XAKATON ARENASI' : 'YAKUNLANGAN XAKATON ARENASI' }}
           </span>
           <h1 class="text-3xl font-extrabold text-white font-mono uppercase tracking-wide mt-2">{{ hackathon.name }}</h1>
           <p class="text-slate-400 text-xs leading-relaxed max-w-2xl">{{ hackathon.description }}</p>
@@ -24,9 +24,9 @@
           <div class="p-4 bg-white/5 rounded border border-white/5 font-mono text-center min-w-[120px]">
             <span class="text-[9px] text-slate-500 block uppercase">Xakaton holati</span>
             <span class="text-xs font-bold block mt-1 uppercase"
-              :class="hackathon.status === 'running' ? 'text-cyber-secondary' : 'text-slate-400'"
+              :class="hackathon.status === 'active' ? 'text-cyber-secondary' : 'text-slate-400'"
             >
-              {{ hackathon.status === 'running' ? 'FAOL' : 'YAKUNLANGAN' }}
+              {{ hackathon.status === 'active' ? 'FAOL' : 'YAKUNLANGAN' }}
             </span>
           </div>
         </div>
@@ -116,10 +116,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import api from '../utils/api.js';
+import { useSocketStore } from '../stores/socket.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -157,7 +158,28 @@ const launchChallenge = (challengeId) => {
   router.push(`/challenges/${challengeId}`);
 };
 
+const socketStore = useSocketStore();
+
+const handleRealtimeUpdate = (data) => {
+  loadArenaData();
+};
+
 onMounted(() => {
   loadArenaData();
+  if (socketStore.socket) {
+    socketStore.socket.on('hackathon:started', handleRealtimeUpdate);
+    socketStore.socket.on('hackathon:finished', handleRealtimeUpdate);
+    socketStore.socket.on('challenge:solved', handleRealtimeUpdate);
+    socketStore.socket.on('leaderboard:refresh', handleRealtimeUpdate);
+  }
+});
+
+onUnmounted(() => {
+  if (socketStore.socket) {
+    socketStore.socket.off('hackathon:started', handleRealtimeUpdate);
+    socketStore.socket.off('hackathon:finished', handleRealtimeUpdate);
+    socketStore.socket.off('challenge:solved', handleRealtimeUpdate);
+    socketStore.socket.off('leaderboard:refresh', handleRealtimeUpdate);
+  }
 });
 </script>

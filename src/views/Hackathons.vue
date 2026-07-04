@@ -22,13 +22,12 @@
             <div class="absolute bottom-4 left-6">
               <span class="text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 rounded font-bold"
                 :class="{
-                  'bg-cyber-primary text-[#0B1020]': h.status === 'running',
-                  'bg-cyber-secondary text-[#0B1020]': h.status === 'open',
-                  'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30': h.status === 'closed',
+                  'bg-cyber-primary text-[#0B1020]': h.status === 'active',
+                  'bg-cyber-secondary text-[#0B1020]': h.status === 'upcoming',
                   'bg-slate-700 text-slate-300': h.status === 'finished'
                 }"
               >
-                {{ h.status === 'running' ? 'faol' : h.status === 'open' ? 'ochiq' : h.status === 'closed' ? 'yopilgan' : 'yakunlangan' }}
+                {{ h.status === 'active' ? 'faol' : h.status === 'upcoming' ? 'kelgusi' : 'yakunlangan' }}
               </span>
               <h2 class="text-xl font-bold text-white font-mono mt-1 uppercase">{{ h.name }}</h2>
             </div>
@@ -66,32 +65,20 @@
                   {{ expandedHackathons[h._id] ? 'JAMOALARNI YASHIRISH' : 'JAMOALARNI KO\'RISH' }}
                 </button>
                 <button
-                  v-if="h.status === 'open' && !isRegistered(h._id)"
+                  v-if="h.status === 'upcoming' && !isRegistered(h._id)"
                   @click="registerTeam(h._id)"
                   class="px-4 py-1.5 rounded font-mono font-bold text-[10px] bg-cyber-secondary hover:bg-cyber-secondary/90 text-[#0B1020] transition"
                 >
                   JAMOANI RO'YXATDAN O'TKAZISH
                 </button>
                 <span
-                  v-else-if="h.status === 'open' && isRegistered(h._id)"
+                  v-else-if="h.status === 'upcoming' && isRegistered(h._id)"
                   class="px-4 py-1.5 rounded font-mono font-bold text-[10px] bg-cyber-primary/20 text-cyber-primary border border-cyber-primary/40 flex items-center cursor-default uppercase"
                 >
                   Ro'yxatdan o'tgan
-                </span>
-                <span
-                  v-else-if="h.status === 'closed' && isRegistered(h._id)"
-                  class="px-4 py-1.5 rounded font-mono font-bold text-[10px] bg-cyber-primary/20 text-cyber-primary border border-cyber-primary/40 flex items-center cursor-default uppercase"
-                >
-                  Ro'yxatdan o'tgan
-                </span>
-                <span
-                  v-else-if="h.status === 'closed' && !isRegistered(h._id)"
-                  class="px-4 py-1.5 rounded font-mono font-bold text-[10px] bg-slate-700/20 text-slate-500 border border-slate-700/40 flex items-center cursor-default uppercase font-mono"
-                >
-                  Yopiq (Closed)
                 </span>
                 <button
-                  v-if="h.status === 'running' || h.status === 'finished'"
+                  v-if="h.status === 'active' || h.status === 'finished'"
                   @click="enterHackathon(h._id)"
                   class="px-4 py-1.5 rounded font-mono font-bold text-[10px] bg-cyber-primary hover:bg-cyber-primary/90 text-[#0B1020] transition"
                 >
@@ -150,6 +137,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import api from '../utils/api.js';
+import { useSocketStore } from '../stores/socket.js';
 
 const router = useRouter();
 const toast = useToast();
@@ -246,14 +234,28 @@ const enterHackathon = (hackathonId) => {
   router.push(`/hackathons/${hackathonId}`);
 };
 
+const socketStore = useSocketStore();
+
+const handleLifecycleUpdate = (data) => {
+  loadHackathons();
+};
+
 onMounted(() => {
   loadHackathons();
   loadMyTeam();
+  if (socketStore.socket) {
+    socketStore.socket.on('hackathon:started', handleLifecycleUpdate);
+    socketStore.socket.on('hackathon:finished', handleLifecycleUpdate);
+  }
 });
 
 onUnmounted(() => {
   if (countdownInterval.value) {
     clearInterval(countdownInterval.value);
+  }
+  if (socketStore.socket) {
+    socketStore.socket.off('hackathon:started', handleLifecycleUpdate);
+    socketStore.socket.off('hackathon:finished', handleLifecycleUpdate);
   }
 });
 </script>
