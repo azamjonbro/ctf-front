@@ -84,8 +84,8 @@
           <span class="text-white font-bold">ALGORITM</span>
         </div>
         <div class="flex justify-between pl-2">
-          <span>PORT:</span>
-          <span class="text-cyber-primary font-bold">5001/TCP</span>
+          <span>HOST:</span>
+          <span class="text-cyber-primary font-bold">ctf.techinfo.uz</span>
         </div>
         <div class="flex justify-between pr-2 border-r border-white/5">
           <span>ENCRYPT:</span>
