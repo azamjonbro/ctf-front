@@ -16,7 +16,7 @@
           <p class="text-slate-400 text-xs leading-relaxed max-w-2xl">{{ hackathon.description }}</p>
         </div>
 
-        <div class="flex space-x-4">
+        <div class="flex space-x-4 items-center">
           <div class="p-4 bg-white/5 rounded border border-white/5 font-mono text-center min-w-[120px]">
             <span class="text-[9px] text-slate-500 block uppercase">Maksimal jamoalar</span>
             <span class="text-lg font-bold text-white block mt-1">{{ hackathon.maxTeams }}</span>
@@ -29,6 +29,14 @@
               {{ hackathon.status === 'active' ? 'FAOL' : 'YAKUNLANGAN' }}
             </span>
           </div>
+          <button
+            v-if="isAdmin && isHackathonActive"
+            @click="confirmAndFinishHackathonAdmin"
+            :disabled="isAdminFinishing"
+            class="px-4 py-3 bg-cyber-danger hover:bg-cyber-danger/90 text-white font-bold font-mono text-xs rounded tracking-wider transition shadow-neon-danger uppercase"
+          >
+            {{ isAdminFinishing ? 'YAKUNLANMOQDA...' : 'Xakatonni tugatish' }}
+          </button>
         </div>
       </div>
 
@@ -112,15 +120,62 @@
         </div>
       </div>
     </main>
+
+    <!-- PREMIUM CONFIRMATION MODAL -->
+    <div v-if="modalActive" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+      <div class="glass-panel border border-cyber-secondary rounded-lg p-6 max-w-md w-full space-y-6 shadow-neon-secondary">
+        <h3 class="text-lg font-bold font-mono text-cyber-secondary flex items-center space-x-2">
+          <span>⚠️ DIQQAT: MAJBURIY YAKUNLASH</span>
+        </h3>
+        <p class="text-sm text-slate-300 leading-relaxed font-sans">
+          {{ modalMessage }}
+        </p>
+        <div class="flex justify-end space-x-3 font-mono text-xs">
+          <button @click="closeModal(false)" class="px-4 py-2 border border-white/10 text-slate-400 hover:text-white rounded transition">
+            BEKOR QILISH
+          </button>
+          <button @click="closeModal(true)" class="px-4 py-2 bg-cyber-secondary text-[#0B1020] font-bold rounded transition hover:bg-cyber-secondary/90 shadow-neon-secondary">
+            TASDIQLASH
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
+import { useAuthStore } from '../stores/auth.js';
 import api from '../utils/api.js';
 import { useSocketStore } from '../stores/socket.js';
+
+const authStore = useAuthStore();
+const isAdmin = computed(() => authStore.user?.roles?.includes('admin'));
+const isHackathonActive = computed(() => hackathon.value?.status === 'active');
+const isAdminFinishing = ref(false);
+
+// Premium Modal state
+const modalActive = ref(false);
+const modalMessage = ref('');
+let modalResolve = null;
+
+const showCustomConfirm = (message) => {
+  modalMessage.value = message;
+  modalActive.value = true;
+  return new Promise((resolve) => {
+    modalResolve = resolve;
+  });
+};
+
+const closeModal = (result) => {
+  modalActive.value = false;
+  if (modalResolve) {
+    modalResolve(result);
+    modalResolve = null;
+  }
+};
 
 const route = useRoute();
 const router = useRouter();
@@ -156,6 +211,23 @@ const getSessionStatusClass = (status) => {
 
 const launchChallenge = (challengeId) => {
   router.push(`/challenges/${challengeId}`);
+};
+
+const confirmAndFinishHackathonAdmin = async () => {
+  const confirmed = await showCustomConfirm('Ushbu xakatonni majburiy yakunlashni xohlaysizmi? Barcha topshiriqlar bo\'yicha faol sessiyalar tugatiladi.');
+  if (!confirmed) return;
+
+  isAdminFinishing.value = true;
+  try {
+    const res = await api.post('/hackathon/finish', { hackathonId: hackathon.value._id });
+    toast.success(res.data.message || 'Xakaton muvaffaqiyatli yakunlandi!');
+    await loadArenaData();
+  } catch (error) {
+    const msg = error?.error?.message || 'Xakatonni yakunlab bo\'lmadi';
+    toast.error(msg);
+  } finally {
+    isAdminFinishing.value = false;
+  }
 };
 
 const socketStore = useSocketStore();

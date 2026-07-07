@@ -21,9 +21,19 @@
               </span>
               <span class="text-xs font-mono text-slate-400">Yulduzlar: {{ challenge.stars }}</span>
               <span class="text-xs font-mono text-slate-400">Kategoriya: {{ challenge.category }}</span>
+              <span v-if="challenge.status === 'finished'" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-700 text-slate-300 border border-slate-600 font-bold uppercase">YAKUNLANGAN</span>
             </div>
             <h1 class="text-3xl font-extrabold text-white font-mono mt-2 uppercase tracking-wide">{{ challenge.title }}</h1>
-            <p class="text-slate-400 text-sm mt-1 max-w-2xl">{{ challenge.shortDescription }}</p>
+            <p v-if="challenge.shortDescription" class="text-slate-400 text-sm mt-1 max-w-2xl">{{ challenge.shortDescription }}</p>
+            
+            <button
+              v-if="isAdmin && isChallengeActive"
+              @click="confirmAndFinishChallengeAdmin"
+              :disabled="isAdminFinishing"
+              class="mt-3 px-4 py-1.5 bg-cyber-danger hover:bg-cyber-danger/90 text-white text-[10px] font-bold font-mono rounded tracking-wider transition shadow-neon-danger uppercase"
+            >
+              {{ isAdminFinishing ? 'YAKUNLANMOQDA...' : 'Topshiriqni majburiy yakunlash' }}
+            </button>
           </div>
         </div>
 
@@ -50,8 +60,8 @@
 
       <!-- IF NOT JOINED YET: DISPLAY PRE-SESSION DETAILS -->
       <div v-if="!hasActiveSession" class="glass-panel rounded-lg p-8 border border-white/10 space-y-6">
-        <h2 class="text-lg font-bold font-mono text-white border-b border-white/5 pb-2 uppercase">// TOPSHIRIQ HAQIDA UMUMIY MA'LUMOT</h2>
-        <div class="text-slate-300 text-sm leading-relaxed max-w-none font-sans" v-html="challenge.longDescription"></div>
+        <h2 v-if="challenge.longDescription" class="text-lg font-bold font-mono text-white border-b border-white/5 pb-2 uppercase">// TOPSHIRIQ HAQIDA UMUMIY MA'LUMOT</h2>
+        <div v-if="challenge.longDescription" class="text-slate-300 text-sm leading-relaxed max-w-none font-sans" v-html="challenge.longDescription"></div>
         
         <!-- Challenge-level Attachments -->
         <div v-if="challenge.attachments && challenge.attachments.length > 0" class="p-4 rounded bg-[#131C35]/40 border border-white/5 space-y-2 font-mono text-xs">
@@ -140,7 +150,7 @@
                   <span class="text-[10px] font-mono text-cyber-accent uppercase tracking-wider font-bold">Tugun #{{ index + 1 }}: {{ q.title }}</span>
                   <span class="px-2 py-0.5 rounded font-mono text-[9px] font-bold bg-[#131C35] text-cyber-secondary border border-white/15">{{ q.points }} ball</span>
                 </div>
-                <p class="text-xs text-slate-300 leading-relaxed">{{ q.description }}</p>
+                <p v-if="q.description" class="text-xs text-slate-300 leading-relaxed">{{ q.description }}</p>
 
                 <!-- Simple Hint block -->
                 <div v-if="q.hasHint" class="pt-1 font-mono text-[9px]">
@@ -292,6 +302,26 @@
       </div>
 
     </main>
+
+    <!-- PREMIUM CONFIRMATION MODAL -->
+    <div v-if="modalActive" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+      <div class="glass-panel border border-cyber-secondary rounded-lg p-6 max-w-md w-full space-y-6 shadow-neon-secondary">
+        <h3 class="text-lg font-bold font-mono text-cyber-secondary flex items-center space-x-2">
+          <span>⚠️ DIQQAT: JARIMA OGOHLANTIRISHI</span>
+        </h3>
+        <p class="text-sm text-slate-300 leading-relaxed font-sans">
+          {{ modalMessage }}
+        </p>
+        <div class="flex justify-end space-x-3 font-mono text-xs">
+          <button @click="closeModal(false)" class="px-4 py-2 border border-white/10 text-slate-400 hover:text-white rounded transition">
+            BEKOR QILISH
+          </button>
+          <button @click="closeModal(true)" class="px-4 py-2 bg-cyber-secondary text-[#0B1020] font-bold rounded transition hover:bg-cyber-secondary/90 shadow-neon-secondary">
+            TASDIQLASH
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -299,11 +329,38 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
+import { useAuthStore } from '../stores/auth.js';
 import api from '../utils/api.js';
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+const authStore = useAuthStore();
+
+const isAdmin = computed(() => authStore.user?.roles?.includes('admin'));
+const isChallengeActive = computed(() => challenge.value?.status === 'active');
+const isAdminFinishing = ref(false);
+
+// Premium Modal state
+const modalActive = ref(false);
+const modalMessage = ref('');
+let modalResolve = null;
+
+const showCustomConfirm = (message) => {
+  modalMessage.value = message;
+  modalActive.value = true;
+  return new Promise((resolve) => {
+    modalResolve = resolve;
+  });
+};
+
+const closeModal = (result) => {
+  modalActive.value = false;
+  if (modalResolve) {
+    modalResolve(result);
+    modalResolve = null;
+  }
+};
 
 const hasActiveSession = ref(false);
 const challenge = ref(null);
@@ -448,7 +505,7 @@ const submitChallengeFlag = async (flagIndex) => {
 const isUnlockingQuestionHint = ref({});
 
 const confirmAndUnlockQuestionHint = async (questionId) => {
-  const confirmed = confirm("Ushbu savol maslahatini ochish savol ballining 20% kamayishiga (8 ball qolishiga) olib keladi. Rozimisiz?");
+  const confirmed = await showCustomConfirm("Ushbu savol maslahatini ochish savol ballining 20% kamayishiga olib keladi. Rozimisiz?");
   if (!confirmed) return;
 
   isUnlockingQuestionHint.value[questionId] = true;
@@ -474,12 +531,12 @@ const confirmAndUnlockQuestionHint = async (questionId) => {
 const isUnlockingHint = ref(false);
 
 const confirmAndUnlockHint = async () => {
-  const confirmUnlock = confirm('Ushbu maslahatdan foydalanish jamoangiz to\'plagan/to\'playdigan ballarini 20% ga kamaytiradi. Ishonchingiz komilmi?');
+  const confirmUnlock = await showCustomConfirm('Ushbu maslahatdan foydalanish jamoangiz to\'plagan/to\'playdigan ballarini 20% ga kamaytiradi. Ishonchingiz komilmi?');
   if (!confirmUnlock) return;
 
   isUnlockingHint.value = true;
   try {
-    const res = await api.post(`/ctfs/${route.params.challengeId}/hint/unlock`);
+    const res = await api.post('/hint/open', { challengeId: route.params.challengeId });
     toast.success(res.data.message || 'Maslahat muvaffaqiyatli ochildi!');
     
     // Update local state
@@ -508,6 +565,23 @@ const finishChallenge = async () => {
     toast.error(msg);
   } finally {
     isFinishing.value = false;
+  }
+};
+
+const confirmAndFinishChallengeAdmin = async () => {
+  const confirmed = await showCustomConfirm('Ushbu topshiriqni majburiy tugatishni xohlaysizmi? Barcha faol sessiyalar darhol tugatiladi.');
+  if (!confirmed) return;
+
+  isAdminFinishing.value = true;
+  try {
+    const res = await api.post('/challenge/finish', { challengeId: challenge.value.id || challenge.value._id });
+    toast.success(res.data.message || 'Topshiriq muvaffaqiyatli yakunlandi!');
+    await loadChallengeDetails();
+  } catch (error) {
+    const msg = error?.error?.message || 'Topshiriqni yakunlab bo\'lmadi';
+    toast.error(msg);
+  } finally {
+    isAdminFinishing.value = false;
   }
 };
 

@@ -44,6 +44,7 @@
                   <th class="py-3 px-4">Nomi</th>
                   <th class="py-3 px-4">Ballar</th>
                   <th class="py-3 px-4">Yulduzlar</th>
+                  <th v-if="activeTab === 'teams'" class="py-3 px-4">Tugallash vaqti</th>
                   <th class="py-3 px-4 text-center">O'zgarish</th>
                 </tr>
               </thead>
@@ -67,6 +68,7 @@
                   </td>
                   <td class="py-4 px-4 font-mono text-cyber-secondary font-bold">{{ item.points }}</td>
                   <td class="py-4 px-4 font-mono text-cyber-primary">★ {{ item.stars }}</td>
+                  <td v-if="activeTab === 'teams'" class="py-4 px-4 font-mono text-slate-400">{{ item.finishTime || '—' }}</td>
                   <td class="py-4 px-4 text-center font-mono text-xs">
                     <span v-if="item.positionChange > 0" class="text-cyber-primary">+{{ item.positionChange }} ▲</span>
                     <span v-else-if="item.positionChange < 0" class="text-cyber-danger">{{ item.positionChange }} ▼</span>
