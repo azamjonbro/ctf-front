@@ -211,7 +211,15 @@
               :class="solvedFlags.includes(index - 1) ? 'border-l-4 border-l-cyber-secondary bg-cyber-secondary/5' : ''"
             >
               <div class="flex-grow space-y-2">
-                <span class="text-[10px] font-mono text-cyber-secondary uppercase tracking-wider font-bold block">Flag topshirig'i #{{ index }}</span>
+                <div class="flex justify-between items-center">
+                  <span class="text-[10px] font-mono text-cyber-secondary uppercase tracking-wider font-bold block">Flag topshirig'i #{{ index }}</span>
+                  <span
+                    v-if="challenge.flags && challenge.flags[index - 1]"
+                    class="px-2 py-0.5 rounded font-mono text-[9px] font-bold bg-[#131C35] text-cyber-secondary border border-white/15"
+                  >
+                    {{ challenge.flags[index - 1].points }} ball
+                  </span>
+                </div>
                 <p class="text-xs text-slate-300 leading-relaxed">
                   Flag #{{ index }} ni topish uchun to'liq penetratsion test o'tkazing va maqsadli muhit/resurslarni qidiring.
                 </p>
