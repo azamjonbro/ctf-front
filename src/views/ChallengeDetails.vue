@@ -222,7 +222,9 @@
             >
               <div class="flex-grow space-y-2">
                 <div class="flex justify-between items-center">
-                  <span class="text-[10px] font-mono text-cyber-secondary uppercase tracking-wider font-bold block">Flag topshirig'i #{{ index }}</span>
+                  <span class="text-[10px] font-mono text-cyber-secondary uppercase tracking-wider font-bold block">
+                    {{ (challenge.flags && challenge.flags[index - 1]?.title) || ('Flag topshirig\'i #' + index) }}
+                  </span>
                   <span
                     v-if="challenge.flags && challenge.flags[index - 1]"
                     class="px-2 py-0.5 rounded font-mono text-[9px] font-bold bg-[#131C35] text-cyber-secondary border border-white/15"
@@ -231,8 +233,34 @@
                   </span>
                 </div>
                 <p class="text-xs text-slate-300 leading-relaxed">
-                  Flag #{{ index }} ni topish uchun to'liq penetratsion test o'tkazing va maqsadli muhit/resurslarni qidiring.
+                  {{ (challenge.flags && challenge.flags[index - 1]?.description) || ('Flag #' + index + ' ni topish uchun to\'liq penetratsion test o\'tkazing va maqsadli muhit/resurslarni qidiring.') }}
                 </p>
+
+                <!-- Flag specific hint system -->
+                <div v-if="challenge.flags && challenge.flags[index - 1]?.hasHint" class="pt-2 font-mono text-[9px]">
+                  <template v-if="challenge.flags[index - 1].hint">
+                    <span class="text-cyber-secondary font-bold uppercase block mb-1">FLAG MASLAHAT KEYI:</span>
+                    <p class="italic text-xs font-sans text-slate-200">{{ challenge.flags[index - 1].hint }}</p>
+                  </template>
+                  <template v-else>
+                    <button 
+                      type="button" 
+                      @click="confirmAndUnlockFlagHint(index - 1)" 
+                      :disabled="isUnlockingFlagHint[index - 1]"
+                      class="text-yellow-600 hover:text-yellow-500 hover:underline uppercase tracking-wider font-bold"
+                    >
+                      {{ isUnlockingFlagHint[index - 1] ? '[ Maslahat ochilmoqda... ]' : '[ Flag Maslahatini ochish (20% Jarima) ]' }}
+                    </button>
+                  </template>
+                </div>
+
+                <!-- Flag specific attachment -->
+                <div v-if="challenge.flags && challenge.flags[index - 1]?.attachment" class="mt-2">
+                  <a :href="challenge.flags[index - 1].attachment" download class="inline-flex items-center space-x-1 text-[10px] font-mono text-cyber-primary hover:text-white bg-[#0B1020]/80 px-2 py-1.5 rounded border border-cyber-primary/20 transition">
+                    <svg class="h-3 w-3 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <span>Flag resursini yuklab olish</span>
+                  </a>
+                </div>
               </div>
 
               <!-- Flag submit form -->
@@ -285,17 +313,23 @@
             </span>
           </div>
 
-          <div v-if="allFlagsSolved" class="w-full max-w-sm">
+          <div class="w-full max-w-md flex flex-col gap-3">
             <button
+              v-if="allFlagsSolved"
               @click="finishChallenge"
               :disabled="isFinishing"
               class="w-full py-3 bg-cyber-secondary hover:bg-cyber-secondary/90 text-[#0B1020] font-bold font-mono text-sm rounded tracking-widest transition shadow-neon-secondary uppercase"
             >
               {{ isFinishing ? 'YAKUNLANMOQDA...' : 'TOPSHIRIQNI YAKUNLASH' }}
             </button>
-          </div>
-          <div v-else class="text-center px-4 py-2 border border-dashed border-white/10 bg-white/5 rounded text-[10px] font-mono text-slate-500 uppercase cursor-default">
-            🔒 Tugatishdan oldin barcha topshiriq flaglari qo'lga kiritilishi kerak.
+            <button
+              v-else
+              @click="finishChallengeEarly"
+              :disabled="isFinishing"
+              class="w-full py-3 bg-cyber-danger/25 hover:bg-cyber-danger/35 text-cyber-danger border border-cyber-danger/30 font-bold font-mono text-xs rounded tracking-widest transition uppercase"
+            >
+              {{ isFinishing ? 'YAKUNLANMOQDA...' : 'Muddatidan oldin yakunlash (Ballarni muzlatish)' }}
+            </button>
           </div>
         </div>
 
@@ -528,6 +562,26 @@ const confirmAndUnlockQuestionHint = async (questionId) => {
   }
 };
 
+const isUnlockingFlagHint = ref({});
+
+const confirmAndUnlockFlagHint = async (flagIndex) => {
+  const confirmed = await showCustomConfirm("Ushbu flag maslahatini ochish ushbu flag ballining 20% kamayishiga olib keladi. Rozimisiz?");
+  if (!confirmed) return;
+
+  isUnlockingFlagHint.value[flagIndex] = true;
+  try {
+    const challengeId = challenge.value.challengeId || challenge.value.id || challenge.value._id;
+    const res = await api.post(`/ctfs/${challengeId}/flags/${flagIndex}/hint/unlock`);
+    toast.success("Maslahat muvaffaqiyatli ochildi!");
+    await loadChallengeDetails();
+  } catch (error) {
+    const errorMsg = error?.error?.message || 'Maslahatni ochib bo\'lmadi';
+    toast.error(errorMsg);
+  } finally {
+    isUnlockingFlagHint.value[flagIndex] = false;
+  }
+};
+
 const isUnlockingHint = ref(false);
 
 const confirmAndUnlockHint = async () => {
@@ -562,6 +616,25 @@ const finishChallenge = async () => {
     router.push('/challenges');
   } catch (error) {
     const msg = error?.error?.message || 'Yakunlash muvaffaqiyatsiz tugadi';
+    toast.error(msg);
+  } finally {
+    isFinishing.value = false;
+  }
+};
+
+const finishChallengeEarly = async () => {
+  const confirmed = await showCustomConfirm(
+    "Haqiqatan ham topshiriqni muddatidan oldin yakunlamoqchisiz? Qolgan flaglarni yechish imkoniyati yopiladi va joriy ballaringiz qulflanadi."
+  );
+  if (!confirmed) return;
+
+  isFinishing.value = true;
+  try {
+    const res = await api.post(`/ctfs/${route.params.challengeId}/finish-early`);
+    toast.success(res.data.message || "Topshiriq muddatidan oldin muvaffaqiyatli yakunlandi!");
+    router.push('/challenges');
+  } catch (error) {
+    const msg = error?.error?.message || "Xatolik yuz berdi";
     toast.error(msg);
   } finally {
     isFinishing.value = false;
