@@ -121,42 +121,27 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- User statistics counts -->
         <div class="glass-panel p-6 rounded-lg space-y-4">
-          <h2 class="text-sm font-bold font-mono text-white border-b border-white/5 pb-2 uppercase">// Yechimlar tahlili</h2>
+          <h2 class="text-sm font-bold font-mono text-white border-b border-white/5 pb-2 uppercase">// Statistika tahlili</h2>
           
           <div class="space-y-4 font-mono text-xs">
             <div class="flex justify-between items-center">
-              <span class="text-slate-400">Jami yechilgan topshiriqlar:</span>
-              <span class="font-bold text-white">{{ profile.statistics?.totalSolved || 0 }}</span>
+              <span class="text-slate-400">Jami yechilganlar:</span>
+              <span class="font-bold text-white">{{ profile.totalSolved || 0 }}</span>
             </div>
             
-            <div class="space-y-1">
-              <div class="flex justify-between items-center text-[10px] text-slate-400 uppercase">
-                <span>Oson yechimlar</span>
-                <span class="text-cyber-primary">{{ profile.statistics?.easySolved || 0 }} yechilgan</span>
-              </div>
-              <div class="w-full bg-slate-800 h-1.5 rounded overflow-hidden">
-                <div class="bg-cyber-primary h-full" :style="{ width: `${Math.min(100, (profile.statistics?.easySolved || 0) * 10)}%` }"></div>
-              </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Yechilgan flaglar:</span>
+              <span class="font-bold text-cyber-primary">{{ profile.solvedFlagsCount || 0 }}</span>
             </div>
 
-            <div class="space-y-1">
-              <div class="flex justify-between items-center text-[10px] text-slate-400 uppercase">
-                <span>O'rtacha yechimlar</span>
-                <span class="text-cyber-secondary">{{ profile.statistics?.mediumSolved || 0 }} yechilgan</span>
-              </div>
-              <div class="w-full bg-slate-800 h-1.5 rounded overflow-hidden">
-                <div class="bg-cyber-secondary h-full" :style="{ width: `${Math.min(100, (profile.statistics?.mediumSolved || 0) * 10)}%` }"></div>
-              </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Yechilgan savollar:</span>
+              <span class="font-bold text-cyber-secondary">{{ profile.solvedQuestionsCount || 0 }}</span>
             </div>
 
-            <div class="space-y-1">
-              <div class="flex justify-between items-center text-[10px] text-slate-400 uppercase">
-                <span>Qiyin yechimlar</span>
-                <span class="text-cyber-danger">{{ profile.statistics?.hardSolved || 0 }} yechilgan</span>
-              </div>
-              <div class="w-full bg-slate-800 h-1.5 rounded overflow-hidden">
-                <div class="bg-cyber-danger h-full" :style="{ width: `${Math.min(100, (profile.statistics?.hardSolved || 0) * 10)}%` }"></div>
-              </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Qatnashgan xakatonlar:</span>
+              <span class="font-bold text-yellow-500">{{ profile.participationCount || 0 }}</span>
             </div>
           </div>
         </div>

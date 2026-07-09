@@ -98,6 +98,22 @@
 
       <!-- IF JOINED: ACTIVE SESSION WORKSPACE -->
       <div v-else class="space-y-8 animate-fade-in">
+
+        <!-- INFO PANEL: Title, Description, Dates -->
+        <div class="glass-panel rounded-lg p-6 border border-white/10 space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-3">
+            <div>
+              <span class="text-[10px] font-mono text-cyber-primary uppercase tracking-wider font-bold">// TOPSHIRIQ MA'LUMOTLARI</span>
+              <h2 class="text-xl font-bold font-mono text-white mt-1">{{ challenge.title }}</h2>
+            </div>
+            <div class="text-xs font-mono text-slate-400 space-y-1">
+              <div>Boshlanish vaqti: <span class="text-slate-200">{{ formatDate(challenge.openedAt) }}</span></div>
+              <div v-if="challenge.expiresAt">Tugash vaqti: <span class="text-slate-200">{{ formatDate(challenge.expiresAt) }}</span></div>
+            </div>
+          </div>
+          <div v-if="challenge.shortDescription" class="text-slate-400 text-xs italic">{{ challenge.shortDescription }}</div>
+          <div v-if="challenge.longDescription" class="text-slate-300 text-xs leading-relaxed max-w-none font-sans" v-html="challenge.longDescription"></div>
+        </div>
         
         <!-- Challenge-level Attachments -->
         <div v-if="challenge.attachments && challenge.attachments.length > 0" class="p-4 rounded bg-[#131C35]/40 border border-white/5 space-y-2 font-mono text-xs">
@@ -394,6 +410,11 @@ const closeModal = (result) => {
     modalResolve(result);
     modalResolve = null;
   }
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleString();
 };
 
 const hasActiveSession = ref(false);
