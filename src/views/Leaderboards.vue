@@ -42,9 +42,11 @@
                 <tr class="border-b border-white/10 text-xs font-mono uppercase text-slate-400 tracking-wider">
                   <th class="py-3 px-4">O'rin</th>
                   <th class="py-3 px-4">Nomi</th>
-                  <th class="py-3 px-4">Ballar</th>
-                  <th class="py-3 px-4">Yulduzlar</th>
-                  <th v-if="activeTab === 'teams'" class="py-3 px-4">Tugallash vaqti</th>
+                  <th class="py-3 px-4">Jami Ballar</th>
+                  <th class="py-3 px-4">Flaglar</th>
+                  <th class="py-3 px-4">Savollar</th>
+                  <th class="py-3 px-4">Jami yechilgan</th>
+                  <th class="py-3 px-4">Tugallash vaqti</th>
                   <th class="py-3 px-4 text-center">O'zgarish</th>
                 </tr>
               </thead>
@@ -67,8 +69,12 @@
                     </div>
                   </td>
                   <td class="py-4 px-4 font-mono text-cyber-secondary font-bold">{{ item.points }}</td>
-                  <td class="py-4 px-4 font-mono text-cyber-primary">★ {{ item.stars }}</td>
-                  <td v-if="activeTab === 'teams'" class="py-4 px-4 font-mono text-slate-400">{{ item.finishTime || '—' }}</td>
+                  <td class="py-4 px-4 font-mono text-cyber-primary">{{ item.solvedFlagsCount || 0 }}</td>
+                  <td class="py-4 px-4 font-mono text-cyber-accent">{{ item.solvedQuestionsCount || 0 }}</td>
+                  <td class="py-4 px-4 font-mono text-slate-300">{{ item.totalSolved || 0 }}</td>
+                  <td class="py-4 px-4 font-mono text-slate-400">
+                    {{ activeTab === 'users' ? (item.finishTime ? new Date(item.finishTime).toLocaleString() : '—') : (item.finishTime || '—') }}
+                  </td>
                   <td class="py-4 px-4 text-center font-mono text-xs">
                     <span v-if="item.positionChange > 0" class="text-cyber-primary">+{{ item.positionChange }} ▲</span>
                     <span v-else-if="item.positionChange < 0" class="text-cyber-danger">{{ item.positionChange }} ▼</span>
