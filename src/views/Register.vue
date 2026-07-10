@@ -243,12 +243,14 @@
 
 <script setup>
 import { reactive, ref, onMounted, onUnmounted } from "vue";
-import { useAuthStore } from "../stores/auth.js";
+import { useAuthStore } from "../stores/auth.store.js";
 import { useToast } from "vue-toastification";
 import { useRouter } from "vue-router";
 import api from "../utils/api.js";
 import { useVuelidate } from "@vuelidate/core";
 import { required, email, minLength } from "@vuelidate/validators";
+import { PASSWORD_MIN_LENGTH } from "../constants/security.js";
+import normalizeUsername from "../utils/normalizeUsername.js";
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -282,7 +284,7 @@ const loadCaptcha = async () => {
 const rules = {
   username: { required, minLength: minLength(3) },
   email: { required, email },
-  password: { required, minLength: minLength(8) },
+  password: { required, minLength: minLength(PASSWORD_MIN_LENGTH) },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -302,10 +304,12 @@ const handleRegister = async () => {
   }, 100);
 
   try {
-    await authStore.userRegister({
+    const payload = {
       ...state,
+      username: normalizeUsername(state.username),
       captchaId: captchaId.value,
-    });
+    };
+    await authStore.userRegister(payload);
 
     setTimeout(() => {
       clearInterval(progressInterval);

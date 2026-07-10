@@ -15,7 +15,7 @@
             <router-link to="/hackathons" class="transition-colors hover:text-cyber-primary text-slate-400" active-class="text-cyber-primary font-bold">Xakatonlar</router-link>
             <router-link to="/leaderboards" class="transition-colors hover:text-cyber-primary text-slate-400" active-class="text-cyber-primary font-bold">Peshqadamlar</router-link>
             <router-link to="/team" class="transition-colors hover:text-cyber-primary text-slate-400" active-class="text-cyber-primary font-bold">Mening jamoam</router-link>
-            <router-link v-if="authStore.user" :to="`/profile/${authStore.user.username}`" class="transition-colors hover:text-cyber-primary text-slate-400" active-class="text-cyber-primary font-bold">Profil</router-link>
+            <router-link v-if="authStore.user" :to="`/profile/${normalizeUsername(authStore.user.username)}`" class="transition-colors hover:text-cyber-primary text-slate-400" active-class="text-cyber-primary font-bold">Profil</router-link>
             
             <button @click="logout" class="ml-4 px-3 py-1 bg-white/5 border border-white/10 rounded text-[10px] uppercase font-mono hover:bg-red-500/20 hover:border-red-500/40 text-slate-300 transition">
               Chiqish
@@ -42,7 +42,7 @@
           <router-link to="/hackathons" @click="mobileMenuOpen = false" class="block py-2 text-slate-400 hover:text-white" active-class="text-cyber-primary font-bold">// Xakatonlar</router-link>
           <router-link to="/leaderboards" @click="mobileMenuOpen = false" class="block py-2 text-slate-400 hover:text-white" active-class="text-cyber-primary font-bold">// Peshqadamlar</router-link>
           <router-link to="/team" @click="mobileMenuOpen = false" class="block py-2 text-slate-400 hover:text-white" active-class="text-cyber-primary font-bold">// Mening jamoam</router-link>
-          <router-link v-if="authStore.user" :to="`/profile/${authStore.user.username}`" @click="mobileMenuOpen = false" class="block py-2 text-slate-400 hover:text-white" active-class="text-cyber-primary font-bold">// Profil</router-link>
+          <router-link v-if="authStore.user" :to="`/profile/${normalizeUsername(authStore.user.username)}`" @click="mobileMenuOpen = false" class="block py-2 text-slate-400 hover:text-white" active-class="text-cyber-primary font-bold">// Profil</router-link>
           <button @click="logout(); mobileMenuOpen = false" class="w-full text-left py-2 text-red-400 hover:text-red-300 font-bold border-t border-white/5 mt-2 pt-2">
             // Tizimdan chiqish
           </button>
@@ -64,8 +64,9 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from './stores/auth.js';
+import { useAuthStore } from './stores/auth.store.js';
 import { useSocketStore } from './stores/socket.js';
+import normalizeUsername from './utils/normalizeUsername.js';
 
 const authStore = useAuthStore();
 const socketStore = useSocketStore();

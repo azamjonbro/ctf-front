@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { io } from 'socket.io-client';
-import { useAuthStore } from './auth.js';
+import { useAuthStore } from './auth.store.js';
 
 export const useSocketStore = defineStore('socket', {
   state: () => ({

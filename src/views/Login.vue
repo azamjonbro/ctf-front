@@ -224,12 +224,13 @@
 
 <script setup>
 import { reactive, ref, onMounted, onUnmounted } from "vue";
-import { useAuthStore } from "../stores/auth.js";
+import { useAuthStore } from "../stores/auth.store.js";
 import { useToast } from "vue-toastification";
 import { useRouter } from "vue-router";
 import api from "../utils/api.js";
 import { useVuelidate } from "@vuelidate/core";
 import { required, minLength } from "@vuelidate/validators";
+import { PASSWORD_MIN_LENGTH } from "../constants/security.js";
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -261,7 +262,7 @@ const loadCaptcha = async () => {
 
 const rules = {
   usernameOrEmail: { required },
-  password: { required, minLength: minLength(6) },
+  password: { required, minLength: minLength(PASSWORD_MIN_LENGTH) },
 };
 
 const v$ = useVuelidate(rules, state);

@@ -361,8 +361,10 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
-import api from '../utils/api.js';
-import { useAuthStore } from '../stores/auth.js';
+import { useAuthStore } from '../stores/auth.store.js';
+import profileService from '../services/profile.service.js';
+import normalizeUsername from '../utils/normalizeUsername.js';
+import { PASSWORD_MIN_LENGTH } from '../constants/security.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -376,7 +378,7 @@ const loadingProgress = ref(0);
 const matrixCanvas = ref(null);
 
 const isOwnProfile = computed(() => {
-  return authStore.user && profile.value && authStore.user.username.toLowerCase() === profile.value.username.toLowerCase();
+  return authStore.user && profile.value && normalizeUsername(authStore.user.username) === normalizeUsername(profile.value.username);
 });
 
 const profilePicInput = ref(null);
@@ -404,12 +406,8 @@ const onProfilePicUpload = async (event) => {
   formData.append('file', file);
 
   try {
-    const res = await api.post('/ctfs/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-    editForm.value.profilePicture = res.data.data.url;
+    const data = await profileService.uploadAvatar(formData);
+    editForm.value.profilePicture = data.url;
     toast.success('Rasm muvaffaqiyatli yuklandi!');
   } catch (error) {
     toast.error(error?.error?.message || 'Rasm yuklash muvaffaqiyatsiz tugadi');
@@ -437,7 +435,7 @@ const openEditModal = () => {
 const handleUpdateProfile = async () => {
   // Client-side validations
   if (editForm.value.username) {
-    const normalized = editForm.value.username.trim().toLowerCase();
+    const normalized = normalizeUsername(editForm.value.username);
     if (!/^[a-zA-Z0-9]{3,30}$/.test(normalized)) {
       toast.error('Username faqat harf va sonlardan iborat bo\'lishi hamda 3-30 belgidan iborat bo\'lishi kerak.');
       return;
@@ -453,22 +451,23 @@ const handleUpdateProfile = async () => {
       toast.error('Yangi parol va uni tasdiqlash mos kelmadi.');
       return;
     }
-    if (editForm.value.newPassword.length < 8) {
-      toast.error('Yangi parol kamida 8 ta belgidan iborat bo\'lishi kerak.');
+    if (editForm.value.newPassword.length < PASSWORD_MIN_LENGTH) {
+      toast.error(`Yangi parol kamida ${PASSWORD_MIN_LENGTH} ta belgidan iborat bo'lishi kerak.`);
       return;
     }
   }
 
   try {
-    const res = await api.put('/users/profile', editForm.value);
-    toast.success(res.data.message);
+    editForm.value.username = normalizeUsername(editForm.value.username);
+    const res = await profileService.updateProfile(editForm.value);
+    toast.success(res.message || 'Profil muvaffaqiyatli yangilandi');
     showEditModal.value = false;
     
-    if (editForm.value.username && editForm.value.username.toLowerCase() !== profile.value.username.toLowerCase()) {
-      const updatedUser = { ...authStore.user, username: editForm.value.username.toLowerCase() };
+    if (editForm.value.username && normalizeUsername(editForm.value.username) !== normalizeUsername(profile.value.username)) {
+      const updatedUser = { ...authStore.user, username: normalizeUsername(editForm.value.username) };
       authStore.user = updatedUser;
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      router.push(`/profile/${editForm.value.username.toLowerCase()}`);
+      router.push(`/profile/${normalizeUsername(editForm.value.username)}`);
     } else {
       loadProfile();
     }
@@ -489,11 +488,11 @@ const loadProfile = async () => {
   }, 100);
 
   try {
-    const res = await api.get(`/users/profile/${route.params.username}`);
+    const data = await profileService.getProfile(route.params.username);
     setTimeout(() => {
       clearInterval(progressInterval);
       loadingProgress.value = 100;
-      profile.value = res.data.data;
+      profile.value = data;
       isLoading.value = false;
     }, 1200);
   } catch (error) {
@@ -505,8 +504,8 @@ const loadProfile = async () => {
 
 const loadCalendar = async () => {
   try {
-    const res = await api.get(`/users/activity-calendar?username=${route.params.username}`);
-    calendarData.value = res.data.data;
+    const data = await profileService.getActivityCalendar(route.params.username);
+    calendarData.value = data;
   } catch (error) {
     // calendar logs fallbacks
   }

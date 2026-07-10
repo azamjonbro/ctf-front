@@ -55,7 +55,7 @@
                   v-for="(item, index) in (activeTab === 'users' ? userLeaderboard : teamLeaderboard)"
                   :key="item._id"
                   class="hover:bg-white/5 transition"
-                  :class="{ 'bg-cyber-primary/5 border-l-2 border-cyber-primary': item._id === currentTargetId }"
+                  :class="{ 'bg-cyber-primary/5 border-l-2 border-cyber-primary': item._id === currentEntityId }"
                 >
                   <td class="py-4 px-4 font-mono font-bold text-white flex items-center space-x-2">
                     <span :class="{'text-cyber-primary': index === 0, 'text-cyber-secondary': index === 1, 'text-cyber-accent': index === 2}">
@@ -132,32 +132,29 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
-import { useAuthStore } from '../stores/auth.js';
-import api from '../utils/api.js';
+import { useAuthStore } from '../stores/auth.store.js';
+import { useLeaderboardStore } from '../stores/leaderboard.store.js';
+import { useCurrentEntity } from '../composables/useCurrentEntity.js';
 import { useToast } from 'vue-toastification';
 
 const authStore = useAuthStore();
+const leaderboardStore = useLeaderboardStore();
 const toast = useToast();
 
 const activeTab = ref('users');
-const userLeaderboard = ref([]);
-const teamLeaderboard = ref([]);
-const surrounding = ref({ currentUserRank: null, currentTeamRank: null, above: [], below: [] });
 
-const currentTargetId = computed(() => {
-  return activeTab.value === 'users' ? authStore.user?.id : null; // can be adapted for team
-});
+const { currentEntityId } = useCurrentEntity(activeTab);
+
+const userLeaderboard = computed(() => leaderboardStore.userLeaderboard);
+const teamLeaderboard = computed(() => leaderboardStore.teamLeaderboard);
+const surrounding = computed(() => leaderboardStore.surrounding);
 
 const loadLeaderboard = async () => {
   try {
     if (activeTab.value === 'users') {
-      const res = await api.get('/leaderboards/users');
-      userLeaderboard.value = res.data.data.leaderboard;
-      surrounding.value = res.data.data.surrounding;
+      await leaderboardStore.fetchUserLeaderboard();
     } else {
-      const res = await api.get('/leaderboards/teams');
-      teamLeaderboard.value = res.data.data.leaderboard;
-      surrounding.value = res.data.data.surrounding;
+      await leaderboardStore.fetchTeamLeaderboard();
     }
   } catch (error) {
     toast.error('Reytinglarni yuklab bo\'lmadi. Tarmoqqa ulanish xatosi.');

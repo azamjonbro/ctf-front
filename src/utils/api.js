@@ -1,7 +1,7 @@
 import axios from 'axios';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
-import { useAuthStore } from '../stores/auth.js';
+import { useAuthStore } from '../stores/auth.store.js';
 
 // Configure NProgress bar
 NProgress.configure({ showSpinner: false, speed: 400 });

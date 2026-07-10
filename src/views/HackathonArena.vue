@@ -147,7 +147,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
-import { useAuthStore } from '../stores/auth.js';
+import { useAuthStore } from '../stores/auth.store.js';
 import api from '../utils/api.js';
 import { useSocketStore } from '../stores/socket.js';
 
@@ -219,7 +219,7 @@ const confirmAndFinishHackathonAdmin = async () => {
 
   isAdminFinishing.value = true;
   try {
-    const res = await api.post('/hackathon/finish', { hackathonId: hackathon.value._id });
+    const res = await api.post('/hackathons/finish', { hackathonId: hackathon.value._id });
     toast.success(res.data.message || 'Xakaton muvaffaqiyatli yakunlandi!');
     await loadArenaData();
   } catch (error) {

@@ -52,19 +52,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
-import api from '../utils/api.js';
+import { useChallengeStore } from '../stores/challenge.store.js';
 
 const router = useRouter();
 const toast = useToast();
-const challenges = ref([]);
+const challengeStore = useChallengeStore();
+
+const challenges = computed(() => challengeStore.challenges);
 
 const loadChallenges = async () => {
   try {
-    const res = await api.get('/ctfs');
-    challenges.value = res.data.data;
+    await challengeStore.fetchChallenges();
   } catch (error) {
     toast.error('Topshiriqlarni yuklab bo\'lmadi.');
   }

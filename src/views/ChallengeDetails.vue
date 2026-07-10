@@ -379,13 +379,16 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
-import { useAuthStore } from '../stores/auth.js';
-import api from '../utils/api.js';
+import { useAuthStore } from '../stores/auth.store.js';
+import { useChallengeStore } from '../stores/challenge.store.js';
+import { useChallengeSession } from '../composables/useChallengeSession.js';
+import getChallengeId from '../utils/getChallengeId.js';
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const authStore = useAuthStore();
+const challengeStore = useChallengeStore();
 
 const isAdmin = computed(() => authStore.user?.roles?.includes('admin'));
 const isChallengeActive = computed(() => challenge.value?.status === 'active');
@@ -460,13 +463,13 @@ const getFlagFailedAttempts = (flagIndex) => {
 
 const loadChallengeDetails = async () => {
   try {
-    const res = await api.get(`/ctfs/${route.params.challengeId}`);
-    hasActiveSession.value = res.data.data.hasActiveSession;
+    const data = await challengeStore.fetchChallengeDetails(route.params.challengeId);
+    hasActiveSession.value = challengeStore.hasActiveSession;
     
     if (hasActiveSession.value) {
-      challenge.value = res.data.data;
-      timeRemaining.value = res.data.data.timeRemainingSeconds;
-      solvedFlags.value = (res.data.data.solvedFlags || []).map(sf => sf.flagIndex);
+      challenge.value = challengeStore.currentChallenge;
+      timeRemaining.value = challengeStore.timeRemaining;
+      solvedFlags.value = challengeStore.solvedFlags;
       
       // Initialize submission structures
       challenge.value.questions.forEach(q => {
@@ -484,7 +487,7 @@ const loadChallengeDetails = async () => {
       
       startTimer();
     } else {
-      challenge.value = res.data.data.challenge;
+      challenge.value = challengeStore.currentChallenge;
     }
   } catch (error) {
     const msg = error?.error?.message || 'Kirish rad etildi yoki topshiriq topilmadi';
@@ -495,7 +498,7 @@ const loadChallengeDetails = async () => {
 
 const joinChallenge = async () => {
   try {
-    await api.post(`/ctfs/${route.params.challengeId}/session`);
+    await challengeStore.startSession(route.params.challengeId);
     toast.success('Topshiriqqa muvaffaqiyatli qo\'shildingiz! Taymer ishga tushdi.');
     await loadChallengeDetails();
   } catch (error) {
@@ -504,17 +507,13 @@ const joinChallenge = async () => {
   }
 };
 
+const { startTimer: runTimer, stopTimer } = useChallengeSession();
+
 const startTimer = () => {
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    if (timeRemaining.value > 0) {
-      timeRemaining.value--;
-    } else {
-      clearInterval(timerInterval);
-      toast.warning('Topshiriq sessiyasi taymeri muddati tugadi!');
-      router.push('/challenges');
-    }
-  }, 1000);
+  runTimer(() => {
+    toast.warning('Topshiriq sessiyasi taymeri muddati tugadi!');
+    router.push('/challenges');
+  });
 };
 
 const submitQuestionAnswer = async (questionId) => {
@@ -523,10 +522,8 @@ const submitQuestionAnswer = async (questionId) => {
 
   isSubmittingQuestion.value[questionId] = true;
   try {
-    const res = await api.post(`/ctfs/${route.params.challengeId}/questions/${questionId}/submit`, {
-      answer: ans
-    });
-    toast.success(res.data.message || 'To\'g\'ri javob!');
+    const res = await challengeStore.submitQuestion(challenge.value, questionId, ans);
+    toast.success(res?.message || 'To\'g\'ri javob!');
     await loadChallengeDetails();
   } catch (error) {
     const msg = error?.error?.message || 'Noto\'g\'ri javob';
@@ -543,9 +540,7 @@ const submitChallengeFlag = async (flagIndex) => {
 
   isSubmittingFlag.value[flagIndex] = true;
   try {
-    await api.post(`/ctfs/${route.params.challengeId}/flags/${flagIndex}/submit`, {
-      flag: flagVal
-    });
+    await challengeStore.submitFlag(challenge.value, flagIndex, flagVal);
     toast.success('To\'g\'ri flag tasdiqlandi!');
     await loadChallengeDetails();
   } catch (error) {
@@ -565,13 +560,13 @@ const confirmAndUnlockQuestionHint = async (questionId) => {
 
   isUnlockingQuestionHint.value[questionId] = true;
   try {
-    const res = await api.post(`/ctfs/${challenge.value.challengeId}/questions/${questionId}/hint/unlock`);
+    const res = await challengeStore.unlockQuestionHint(challenge.value, questionId);
     toast.success("Maslahat muvaffaqiyatli ochildi!");
     
     // Update the question object in-place
     const question = challenge.value.questions.find(q => q.id === questionId);
     if (question) {
-      question.hint = res.data.data.hint;
+      question.hint = res.hint;
       question.hintUnlocked = true;
       visibleHints.value[questionId] = true;
     }
@@ -591,8 +586,8 @@ const confirmAndUnlockFlagHint = async (flagIndex) => {
 
   isUnlockingFlagHint.value[flagIndex] = true;
   try {
-    const challengeId = challenge.value.challengeId || challenge.value.id || challenge.value._id;
-    const res = await api.post(`/ctfs/${challengeId}/flags/${flagIndex}/hint/unlock`);
+    const firstQuestionId = challenge.value.questions && challenge.value.questions[0] ? challenge.value.questions[0].id : 'default';
+    await challengeStore.unlockFlagHint(challenge.value, firstQuestionId, flagIndex);
     toast.success("Maslahat muvaffaqiyatli ochildi!");
     await loadChallengeDetails();
   } catch (error) {
@@ -611,15 +606,8 @@ const confirmAndUnlockHint = async () => {
 
   isUnlockingHint.value = true;
   try {
-    const res = await api.post('/hint/open', { challengeId: route.params.challengeId });
-    toast.success(res.data.message || 'Maslahat muvaffaqiyatli ochildi!');
-    
-    // Update local state
-    if (challenge.value) {
-      challenge.value.hintUsed = true;
-      challenge.value.challengeHint = res.data.data.hint;
-    }
-    // Re-load details to update calculations
+    await challengeStore.openChallengeHint(challenge.value);
+    toast.success('Maslahat muvaffaqiyatli ochildi!');
     await loadChallengeDetails();
   } catch (error) {
     const msg = error?.error?.message || 'Maslahatni ochish muvaffaqiyatsiz tugadi';
@@ -630,10 +618,12 @@ const confirmAndUnlockHint = async () => {
 };
 
 const finishChallenge = async () => {
+  const ctfId = getChallengeId(challenge.value);
+  if (!ctfId) return;
   isFinishing.value = true;
   try {
-    const res = await api.post(`/ctfs/${route.params.challengeId}/finish`);
-    toast.success(res.data.message || 'Topshiriq yakunlandi!');
+    await challengeStore.finishChallenge(ctfId);
+    toast.success('Topshiriq yakunlandi!');
     router.push('/challenges');
   } catch (error) {
     const msg = error?.error?.message || 'Yakunlash muvaffaqiyatsiz tugadi';
@@ -644,6 +634,8 @@ const finishChallenge = async () => {
 };
 
 const finishChallengeEarly = async () => {
+  const ctfId = getChallengeId(challenge.value);
+  if (!ctfId) return;
   const confirmed = await showCustomConfirm(
     "Haqiqatan ham topshiriqni muddatidan oldin yakunlamoqchisiz? Qolgan flaglarni yechish imkoniyati yopiladi va joriy ballaringiz qulflanadi."
   );
@@ -651,8 +643,8 @@ const finishChallengeEarly = async () => {
 
   isFinishing.value = true;
   try {
-    const res = await api.post(`/ctfs/${route.params.challengeId}/finish-early`);
-    toast.success(res.data.message || "Topshiriq muddatidan oldin muvaffaqiyatli yakunlandi!");
+    await challengeStore.finishChallengeEarly(ctfId);
+    toast.success("Topshiriq muddatidan oldin muvaffaqiyatli yakunlandi!");
     router.push('/challenges');
   } catch (error) {
     const msg = error?.error?.message || "Xatolik yuz berdi";
@@ -663,13 +655,15 @@ const finishChallengeEarly = async () => {
 };
 
 const confirmAndFinishChallengeAdmin = async () => {
+  const ctfId = getChallengeId(challenge.value);
+  if (!ctfId) return;
   const confirmed = await showCustomConfirm('Ushbu topshiriqni majburiy tugatishni xohlaysizmi? Barcha faol sessiyalar darhol tugatiladi.');
   if (!confirmed) return;
 
   isAdminFinishing.value = true;
   try {
-    const res = await api.post('/challenge/finish', { challengeId: challenge.value.id || challenge.value._id });
-    toast.success(res.data.message || 'Topshiriq muvaffaqiyatli yakunlandi!');
+    await challengeStore.forceFinishChallenge(ctfId);
+    toast.success('Topshiriq muvaffaqiyatli yakunlandi!');
     await loadChallengeDetails();
   } catch (error) {
     const msg = error?.error?.message || 'Topshiriqni yakunlab bo\'lmadi';

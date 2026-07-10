@@ -86,7 +86,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useAuthStore } from '../stores/auth.js';
+import { useAuthStore } from '../stores/auth.store.js';
 import { useSocketStore } from '../stores/socket.js';
 import { useToast } from 'vue-toastification';
 import { useRouter } from 'vue-router';
