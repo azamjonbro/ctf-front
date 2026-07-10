@@ -2,44 +2,95 @@
   <div class="min-h-screen bg-cyber-bg text-slate-200">
     <main v-if="challenge" class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
       
-      <!-- HEADER PANEL -->
-      <div class="p-6 rounded-lg glass-panel border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div class="flex flex-col md:flex-row items-center gap-6">
-          <img v-if="challenge.image" :src="challenge.image" class="w-24 h-24 rounded border border-white/10 shadow-neon-primary object-cover" alt="Challenge Image" />
-          <div v-else class="w-24 h-24 rounded bg-slate-800 border border-white/10 flex items-center justify-center font-mono text-slate-500 text-xs text-center p-2 uppercase">RASM YO'Q</div>
-          
-          <div>
-            <div class="flex items-center space-x-3">
-              <span class="text-xs uppercase px-2 py-0.5 rounded font-mono font-bold"
-                :class="{
-                  'bg-cyber-primary/10 text-cyber-primary border border-cyber-primary/20': challenge.difficulty === 'easy',
-                  'bg-cyber-secondary/10 text-cyber-secondary border border-cyber-secondary/20': challenge.difficulty === 'medium',
-                  'bg-cyber-danger/10 text-cyber-danger border border-cyber-danger/20': challenge.difficulty === 'hard',
-                }"
-              >
-                {{ challenge.difficulty === 'easy' ? 'oson' : challenge.difficulty === 'medium' ? 'o\'rtacha' : 'qiyin' }}
-              </span>
-              <span class="text-xs font-mono text-slate-400">Yulduzlar: {{ challenge.stars }}</span>
-              <span class="text-xs font-mono text-slate-400">Kategoriya: {{ challenge.category }}</span>
-              <span v-if="challenge.status === 'finished'" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-700 text-slate-300 border border-slate-600 font-bold uppercase">YAKUNLANGAN</span>
+      <!-- IF NOT JOINED YET: DISPLAY PRE-SESSION DETAILS CARD & RULES -->
+      <div v-if="!hasActiveSession" class="flex flex-col items-center justify-center min-h-[70vh] max-w-3xl mx-auto space-y-8 py-12">
+        <div class="w-full glass-panel rounded-lg p-8 border border-white/10 space-y-6 shadow-neon-primary text-center">
+          <div class="space-y-3">
+            <h1 class="text-4xl font-extrabold text-white font-mono uppercase tracking-widest">{{ challenge.title }}</h1>
+            <div class="h-1 w-24 bg-cyber-primary mx-auto my-4 rounded"></div>
+            <p class="text-slate-300 text-sm leading-relaxed max-w-2xl mx-auto font-mono">
+              {{ challenge.shortDescription }}
+            </p>
+          </div>
+
+          <!-- CTF Metadata Details Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono text-left max-w-xl mx-auto pt-4">
+            <div class="p-4 bg-slate-950/40 rounded border border-white/5 space-y-1">
+              <span class="text-slate-500 block uppercase text-[10px] tracking-wider">Davomiyligi (Duration)</span>
+              <span class="text-base font-bold text-white">{{ challenge.timerMinutes }} daqiqa</span>
             </div>
-            <h1 class="text-3xl font-extrabold text-white font-mono mt-2 uppercase tracking-wide">{{ challenge.title }}</h1>
-            <p v-if="challenge.shortDescription" class="text-slate-400 text-sm mt-1 max-w-2xl">{{ challenge.shortDescription }}</p>
-            
-            <button
-              v-if="isAdmin && isChallengeActive"
-              @click="confirmAndFinishChallengeAdmin"
-              :disabled="isAdminFinishing"
-              class="mt-3 px-4 py-1.5 bg-cyber-danger hover:bg-cyber-danger/90 text-white text-[10px] font-bold font-mono rounded tracking-wider transition shadow-neon-danger uppercase"
-            >
-              {{ isAdminFinishing ? 'YAKUNLANMOQDA...' : 'Topshiriqni majburiy yakunlash' }}
+            <div class="p-4 bg-slate-950/40 rounded border border-white/5 space-y-1">
+              <span class="text-slate-500 block uppercase text-[10px] tracking-wider">Ishtirokchilar (Participant Count)</span>
+              <span class="text-base font-bold text-white">{{ challenge.participantCount || 0 }} ta jamoa/foydalanuvchi</span>
+            </div>
+            <div class="p-4 bg-slate-950/40 rounded border border-white/5 space-y-1">
+              <span class="text-slate-500 block uppercase text-[10px] tracking-wider">Boshlanish Vaqti (Start Time)</span>
+              <span class="text-sm font-bold text-white">{{ formatDate(challenge.startTime) }}</span>
+            </div>
+            <div class="p-4 bg-slate-950/40 rounded border border-white/5 space-y-1">
+              <span class="text-slate-500 block uppercase text-[10px] tracking-wider">Tugash Vaqti (End Time)</span>
+              <span class="text-sm font-bold text-white">{{ challenge.endTime ? formatDate(challenge.endTime) : 'Cheksiz' }}</span>
+            </div>
+          </div>
+
+          <!-- Rules and Instructions -->
+          <div class="border-t border-white/5 pt-6 text-left space-y-4 max-w-xl mx-auto">
+            <h3 class="text-sm font-bold font-mono text-white uppercase tracking-wider">// Qoidalar va Ko'rsatmalar</h3>
+            <div v-if="challenge.longDescription" class="text-slate-300 text-xs leading-relaxed font-sans" v-html="challenge.longDescription"></div>
+            <div v-else class="text-slate-400 text-xs italic font-sans leading-relaxed">
+              Ushbu topshiriqni boshlashdan oldin, barcha qoidalar bilan tanishib chiqing. Sessiya boshlangandan so'ng taymer orqaga hisoblashni boshlaydi va uni to'xtatib bo'lmaydi. Sahifani yangilash taymerni noldan boshlamaydi.
+            </div>
+          </div>
+
+          <!-- Centered Start CTF Button -->
+          <div class="pt-6">
+            <button @click="joinChallenge" class="px-10 py-4 bg-cyber-primary hover:bg-cyber-primary/90 text-[#0B1020] text-sm font-extrabold font-mono rounded tracking-widest transition shadow-neon-primary uppercase transform hover:scale-105">
+              TOPSHIRIQ SESSIYASINI BOSHLASH (START CTF)
             </button>
           </div>
         </div>
+      </div>
 
-        <!-- Timer/Join State -->
-        <div class="p-4 rounded bg-cyber-card border border-white/5 font-mono text-center min-w-[160px] self-stretch md:self-auto flex flex-col justify-center">
-          <template v-if="hasActiveSession">
+      <!-- IF JOINED: ACTIVE SESSION WORKSPACE -->
+      <div v-else class="space-y-8 animate-fade-in">
+
+        <!-- HEADER PANEL -->
+        <div class="p-6 rounded-lg glass-panel border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div class="flex flex-col md:flex-row items-center gap-6">
+            <img v-if="challenge.image" :src="challenge.image" class="w-24 h-24 rounded border border-white/10 shadow-neon-primary object-cover" alt="Challenge Image" />
+            <div v-else class="w-24 h-24 rounded bg-slate-800 border border-white/10 flex items-center justify-center font-mono text-slate-500 text-xs text-center p-2 uppercase">RASM YO'Q</div>
+            
+            <div>
+              <div class="flex items-center space-x-3">
+                <span class="text-xs uppercase px-2 py-0.5 rounded font-mono font-bold"
+                  :class="{
+                    'bg-cyber-primary/10 text-cyber-primary border border-cyber-primary/20': challenge.difficulty === 'easy',
+                    'bg-cyber-secondary/10 text-cyber-secondary border border-cyber-secondary/20': challenge.difficulty === 'medium',
+                    'bg-cyber-danger/10 text-cyber-danger border border-cyber-danger/20': challenge.difficulty === 'hard',
+                  }"
+                >
+                  {{ challenge.difficulty === 'easy' ? 'oson' : challenge.difficulty === 'medium' ? 'o\'rtacha' : 'qiyin' }}
+                </span>
+                <span class="text-xs font-mono text-slate-400">Yulduzlar: {{ challenge.stars }}</span>
+                <span class="text-xs font-mono text-slate-400">Kategoriya: {{ challenge.category }}</span>
+                <span v-if="challenge.status === 'finished'" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-700 text-slate-300 border border-slate-600 font-bold uppercase">YAKUNLANGAN</span>
+              </div>
+              <h1 class="text-3xl font-extrabold text-white font-mono mt-2 uppercase tracking-wide">{{ challenge.title }}</h1>
+              <p v-if="challenge.shortDescription" class="text-slate-400 text-sm mt-1 max-w-2xl">{{ challenge.shortDescription }}</p>
+              
+              <button
+                v-if="isAdmin && isChallengeActive"
+                @click="confirmAndFinishChallengeAdmin"
+                :disabled="isAdminFinishing"
+                class="mt-3 px-4 py-1.5 bg-cyber-danger hover:bg-cyber-danger/90 text-white text-[10px] font-bold font-mono rounded tracking-wider transition shadow-neon-danger uppercase"
+              >
+                {{ isAdminFinishing ? 'YAKUNLANMOQDA...' : 'Topshiriqni majburiy yakunlash' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Timer/Join State -->
+          <div class="p-4 rounded bg-cyber-card border border-white/5 font-mono text-center min-w-[160px] self-stretch md:self-auto flex flex-col justify-center">
             <span class="text-[10px] text-slate-500 block uppercase tracking-wider">Sessiyadan qolgan vaqt</span>
             <span class="text-2xl font-bold block mt-1" :class="timeRemaining <= 300 ? 'text-cyber-danger animate-pulse' : 'text-cyber-secondary'">
               {{ formatTime(timeRemaining) }}
@@ -48,56 +99,8 @@
             <span class="text-sm font-bold block" :class="(challenge?.failedAttempts || 0) >= 4 ? 'text-cyber-danger' : 'text-white'">
               {{ challenge?.failedAttempts || 0 }} / 5
             </span>
-          </template>
-          <template v-else>
-            <span class="text-[10px] text-slate-500 block uppercase tracking-wider mb-2">Davomiyligi: {{ challenge.timerMinutes }} daqiqa</span>
-            <button @click="joinChallenge" class="w-full py-2 bg-cyber-primary hover:bg-cyber-primary/90 text-[#0B1020] text-xs font-bold font-mono rounded tracking-wider transition shadow-neon-primary uppercase">
-              TOPSHIRIQQA QO'SHILISH
-            </button>
-          </template>
-        </div>
-      </div>
-
-      <!-- IF NOT JOINED YET: DISPLAY PRE-SESSION DETAILS -->
-      <div v-if="!hasActiveSession" class="glass-panel rounded-lg p-8 border border-white/10 space-y-6">
-        <h2 v-if="challenge.longDescription" class="text-lg font-bold font-mono text-white border-b border-white/5 pb-2 uppercase">// TOPSHIRIQ HAQIDA UMUMIY MA'LUMOT</h2>
-        <div v-if="challenge.longDescription" class="text-slate-300 text-sm leading-relaxed max-w-none font-sans" v-html="challenge.longDescription"></div>
-        
-        <!-- Challenge-level Attachments -->
-        <div v-if="challenge.attachments && challenge.attachments.length > 0" class="p-4 rounded bg-[#131C35]/40 border border-white/5 space-y-2 font-mono text-xs">
-          <span class="text-[10px] text-slate-500 block uppercase font-bold tracking-wider">// Biriktirilgan fayllar (Challenge Attachments)</span>
-          <div class="flex flex-wrap gap-3">
-            <a v-for="(url, idx) in challenge.attachments" :key="idx" :href="url" download class="flex items-center space-x-2 text-[10px] font-mono text-cyber-primary hover:text-white bg-[#0B1020]/80 px-3 py-1.5 rounded border border-cyber-primary/20 transition">
-              <svg class="h-3 w-3 stroke-current" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              <span>Resursni yuklab olish [{{ idx + 1 }}]</span>
-            </a>
           </div>
         </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 font-mono text-xs text-slate-400">
-          <div class="p-4 bg-slate-950/40 rounded border border-white/5 space-y-1">
-            <span class="text-slate-500 block uppercase text-[10px]">Umumiy savollar</span>
-            <span class="text-base font-bold text-white">{{ challenge.questionsCount || 5 }} ta savol</span>
-          </div>
-          <div class="p-4 bg-slate-950/40 rounded border border-white/5 space-y-1">
-            <span class="text-slate-500 block uppercase text-[10px]">Umumiy flaglar</span>
-            <span class="text-base font-bold text-white">{{ challenge.flagsCount || 1 }} ta flag</span>
-          </div>
-          <div class="p-4 bg-slate-950/40 rounded border border-white/5 space-y-1">
-            <span class="text-slate-500 block uppercase text-[10px]">Sessiya cheklovi</span>
-            <span class="text-base font-bold text-white">{{ challenge.timerMinutes }} daqiqa</span>
-          </div>
-        </div>
-
-        <div class="flex justify-center pt-6">
-          <button @click="joinChallenge" class="px-8 py-3 bg-cyber-primary hover:bg-cyber-primary/90 text-[#0B1020] text-sm font-bold font-mono rounded tracking-wider transition shadow-neon-primary uppercase">
-            TOPSHIRIQ SESSIYASINI BOSHLASH
-          </button>
-        </div>
-      </div>
-
-      <!-- IF JOINED: ACTIVE SESSION WORKSPACE -->
-      <div v-else class="space-y-8 animate-fade-in">
 
         <!-- INFO PANEL: Title, Description, Dates -->
         <div class="glass-panel rounded-lg p-6 border border-white/10 space-y-4">
@@ -421,13 +424,13 @@ const closeModal = (result) => {
 };
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return '';
+  if (!dateStr) return 'Noma\'lum';
   return new Date(dateStr).toLocaleString();
 };
 
 const hasActiveSession = ref(false);
 const challenge = ref(null);
-const timeRemaining = ref(0);
+const timeRemaining = computed(() => challengeStore.timeRemaining);
 
 // Submissions state
 const questionSubmissions = ref({});
@@ -473,7 +476,6 @@ const loadChallengeDetails = async () => {
     
     if (hasActiveSession.value) {
       challenge.value = challengeStore.currentChallenge;
-      timeRemaining.value = challengeStore.timeRemaining;
       solvedFlags.value = challengeStore.solvedFlags;
       
       // Initialize submission structures
