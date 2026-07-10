@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import challengeService from '../services/challenge.service.js';
 import getChallengeId from '../utils/getChallengeId.js';
+import getQuestionId from '../utils/getQuestionId.js';
 
 export const useChallengeStore = defineStore('challenge', {
   state: () => ({
@@ -67,7 +68,7 @@ export const useChallengeStore = defineStore('challenge', {
       if (!ctfId) return;
       const data = await challengeService.unlockQuestionHint(ctfId, questionId);
       if (this.currentChallenge && this.currentChallenge.questions) {
-        const question = this.currentChallenge.questions.find(q => q.id === questionId);
+        const question = this.currentChallenge.questions.find(q => getQuestionId(q) === questionId);
         if (question) {
           question.hint = data.hint;
           question.hintUnlocked = true;

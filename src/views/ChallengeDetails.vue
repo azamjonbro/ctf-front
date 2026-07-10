@@ -170,22 +170,22 @@
 
                 <!-- Simple Hint block -->
                 <div v-if="q.hasHint" class="pt-1 font-mono text-[9px]">
-                  <template v-if="q.hintUnlocked || q.hint">
-                    <button type="button" @click="visibleHints[q.id] = !visibleHints[q.id]" class="text-cyber-secondary hover:underline uppercase tracking-wider">
-                      {{ visibleHints[q.id] ? '[ Maslahatni yashirish ]' : '[ Maslahatni ko\'rsatish ]' }}
+                  <template v-if="hintStore.isHintUnlocked(getQuestionId(q)) || q.hintUnlocked || q.hint">
+                    <button type="button" disabled class="text-slate-500 uppercase tracking-wider cursor-not-allowed">
+                      [ MASLAHAT OCHILGAN ]
                     </button>
-                    <p v-if="visibleHints[q.id]" class="text-[10px] font-mono text-slate-400 mt-1 italic border-l border-cyber-secondary/30 pl-2">
-                      Maslahat: {{ q.hint }}
+                    <p class="text-[10px] font-mono text-slate-400 mt-1 italic border-l border-cyber-secondary/30 pl-2">
+                      Maslahat: {{ hintStore.getHint(getQuestionId(q)) || q.hint }}
                     </p>
                   </template>
                   <template v-else>
                     <button 
                       type="button" 
-                      @click="confirmAndUnlockQuestionHint(q.id)" 
-                      :disabled="isUnlockingQuestionHint[q.id]"
+                      @click="unlockHint(q)" 
+                      :disabled="hintStore.isHintLoading(getQuestionId(q))"
                       class="text-yellow-600 hover:text-yellow-500 hover:underline uppercase tracking-wider"
                     >
-                      {{ isUnlockingQuestionHint[q.id] ? '[ Maslahat ochilmoqda... ]' : '[ Maslahatni ochish (20% Jarima) ]' }}
+                      {{ hintStore.isHintLoading(getQuestionId(q)) ? '[ OCHILMOQDA... ]' : '[ MASLAHAT ]' }}
                     </button>
                   </template>
                 </div>
@@ -367,7 +367,7 @@
             BEKOR QILISH
           </button>
           <button @click="closeModal(true)" class="px-4 py-2 bg-cyber-secondary text-[#0B1020] font-bold rounded transition hover:bg-cyber-secondary/90 shadow-neon-secondary">
-            TASDIQLASH
+            OCHISH
           </button>
         </div>
       </div>
@@ -381,14 +381,19 @@ import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import { useAuthStore } from '../stores/auth.store.js';
 import { useChallengeStore } from '../stores/challenge.store.js';
+import { useHintStore } from '../stores/hint.store.js';
+import { useLeaderboardStore } from '../stores/leaderboard.store.js';
 import { useChallengeSession } from '../composables/useChallengeSession.js';
 import getChallengeId from '../utils/getChallengeId.js';
+import getQuestionId from '../utils/getQuestionId.js';
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const authStore = useAuthStore();
 const challengeStore = useChallengeStore();
+const hintStore = useHintStore();
+const leaderboardStore = useLeaderboardStore();
 
 const isAdmin = computed(() => authStore.user?.roles?.includes('admin'));
 const isChallengeActive = computed(() => challenge.value?.status === 'active');
@@ -476,6 +481,10 @@ const loadChallengeDetails = async () => {
         if (!questionSubmissions.value[q.id]) {
           questionSubmissions.value[q.id] = '';
         }
+        const qId = getQuestionId(q);
+        if (qId) {
+          hintStore.fetchQuestion(qId);
+        }
       });
       
       const flagsCount = challenge.value.flagsCount || 0;
@@ -552,29 +561,33 @@ const submitChallengeFlag = async (flagIndex) => {
   }
 };
 
-const isUnlockingQuestionHint = ref({});
+const unlockHint = async (question) => {
+  const questionId = getQuestionId(question);
+  const ctfId = getChallengeId(challenge.value);
 
-const confirmAndUnlockQuestionHint = async (questionId) => {
-  const confirmed = await showCustomConfirm("Ushbu savol maslahatini ochish savol ballining 20% kamayishiga olib keladi. Rozimisiz?");
+  if (!questionId) {
+    toast.error("Question not found");
+    return;
+  }
+  if (!ctfId) {
+    toast.error("Challenge session not found");
+    return;
+  }
+
+  const costPoints = Math.round((question?.points ?? 10) * 0.2);
+  const confirmed = await showCustomConfirm(`Bu maslahatni ochish uchun ${costPoints} ball yechiladi. Davom etasizmi?`);
   if (!confirmed) return;
 
-  isUnlockingQuestionHint.value[questionId] = true;
   try {
-    const res = await challengeStore.unlockQuestionHint(challenge.value, questionId);
+    await hintStore.unlockHint(ctfId, questionId);
     toast.success("Maslahat muvaffaqiyatli ochildi!");
     
-    // Update the question object in-place
-    const question = challenge.value.questions.find(q => q.id === questionId);
-    if (question) {
-      question.hint = res.hint;
-      question.hintUnlocked = true;
-      visibleHints.value[questionId] = true;
-    }
+    await loadChallengeDetails();
+    await leaderboardStore.fetchUserLeaderboard();
+    await leaderboardStore.fetchTeamLeaderboard();
   } catch (error) {
-    const errorMsg = error?.error?.message || 'Maslahatni ochib bo\'lmadi';
+    const errorMsg = error?.error?.message || error?.message || 'Maslahatni ochib bo\'lmadi';
     toast.error(errorMsg);
-  } finally {
-    isUnlockingQuestionHint.value[questionId] = false;
   }
 };
 
