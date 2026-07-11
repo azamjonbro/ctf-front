@@ -154,7 +154,7 @@
         </div>
 
         <!-- SECTION 1: QUESTIONS AREA -->
-        <div class="space-y-4">
+        <div v-if="challenge.questions && challenge.questions.length > 0" class="space-y-4">
           <h2 class="text-xs font-mono font-bold uppercase text-slate-400 tracking-widest pl-1">// 1. BILIMNI TEKSHIRISH UCHUN SAVOLLAR ({{ challenge.questions.length }} ta tugun)</h2>
           
           <div class="grid grid-cols-1 gap-6">
@@ -207,7 +207,17 @@
                 <form v-else @submit.prevent="submitQuestionAnswer(q.id)" class="space-y-2">
                   <label class="text-[9px] font-mono uppercase text-slate-500 block">Javobni yuborish (Urinishlar: {{ getQuestionFailedAttempts(q.id) }} / 5)</label>
                   <div class="flex gap-2">
+                    <select
+                      v-if="q.type === 'multiple-choice'"
+                      v-model="questionSubmissions[q.id]"
+                      class="flex-1 bg-[#131C35] border border-white/10 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyber-primary font-mono"
+                      required
+                    >
+                      <option value="" disabled selected>Variantni tanlang</option>
+                      <option v-for="opt in q.options" :key="opt" :value="opt">{{ opt }}</option>
+                    </select>
                     <input
+                      v-else
                       v-model="questionSubmissions[q.id]"
                       type="text"
                       placeholder="Javob matni"
