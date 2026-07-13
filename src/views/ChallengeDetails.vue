@@ -164,7 +164,7 @@
               class="glass-panel p-6 rounded-lg border border-white/10 flex flex-col md:flex-row justify-between gap-6"
               :class="q.isSolved ? 'border-l-4 border-l-cyber-primary bg-cyber-primary/5' : ''"
             >
-              <div class="flex-grow space-y-3">
+              <div class="flex-grow min-w-0 space-y-3">
                 <div class="flex justify-between items-center">
                   <span class="text-[10px] font-mono text-cyber-accent uppercase tracking-wider font-bold">Tugun #{{ index + 1 }}: {{ q.title }}</span>
                   <span class="px-2 py-0.5 rounded font-mono text-[9px] font-bold bg-[#131C35] text-cyber-secondary border border-white/15">{{ q.points }} ball</span>
@@ -195,7 +195,7 @@
               </div>
 
               <!-- Answer Submission form -->
-              <div class="w-full md:w-80 flex flex-col justify-center border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6">
+              <div class="w-full md:w-80 flex-shrink-0 flex flex-col justify-center border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6">
                 <div v-if="q.isSolved" class="text-center font-mono p-3 bg-cyber-primary/10 border border-cyber-primary/20 rounded">
                   <span class="text-cyber-primary text-xs font-bold block">✓ TO'G'RI TASDIQLANDI</span>
                   <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Ballar berildi</span>
@@ -249,7 +249,7 @@
               class="glass-panel p-6 rounded-lg border border-white/10 flex flex-col md:flex-row justify-between gap-6"
               :class="solvedFlags.includes(index - 1) ? 'border-l-4 border-l-cyber-secondary bg-cyber-secondary/5' : ''"
             >
-              <div class="flex-grow space-y-2">
+              <div class="flex-grow min-w-0 space-y-2">
                 <div class="flex justify-between items-center">
                   <span class="text-[10px] font-mono text-cyber-secondary uppercase tracking-wider font-bold block">
                     {{ (challenge.flags && challenge.flags[index - 1]?.title) || ('Flag topshirig\'i #' + index) }}
@@ -293,7 +293,7 @@
               </div>
 
               <!-- Flag submit form -->
-              <div class="w-full md:w-96 flex flex-col justify-center border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6">
+              <div class="w-full md:w-96 flex-shrink-0 flex flex-col justify-center border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6">
                 <div v-if="solvedFlags.includes(index - 1)" class="text-center font-mono p-3 bg-cyber-secondary/10 border border-cyber-secondary/20 rounded">
                   <span class="text-cyber-secondary text-xs font-bold block">✓ FLAG QO'LGA KIRITILDI</span>
                   <span class="text-[9px] text-slate-500 uppercase mt-0.5 block">Jarayon yangilandi</span>
