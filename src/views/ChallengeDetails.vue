@@ -283,13 +283,6 @@
                 <form v-else @submit.prevent="submitChallengeFlag(index - 1)" class="space-y-2">
                   <label class="text-[9px] font-mono uppercase text-slate-500 block">Flagni kiritish (Urinishlar: {{ getFlagFailedAttempts(index - 1) }} / 5)</label>
                   <div class="flex gap-2">
-                    <button
-                      type="button"
-                      @click="toast.info('Maslahat: Flag manzillari uchun batafsil tavsif va maqsadli muhit ma\'lumotlariga qarang.')"
-                      class="px-2.5 py-1.5 bg-slate-800 border border-white/10 rounded font-mono text-[10px] text-slate-300 hover:bg-slate-700 transition"
-                    >
-                      MASLAHAT
-                    </button>
                     <input
                       v-model="flagSubmissions[index - 1]"
                       type="text"
