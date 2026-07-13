@@ -129,29 +129,7 @@
           </div>
         </div>
 
-        <!-- Challenge-level Global Hint -->
-        <div v-if="challenge.hasHint" class="p-4 rounded bg-[#131C35]/40 border border-white/5 space-y-3 font-mono text-xs">
-          <span class="text-[10px] text-slate-500 block uppercase font-bold tracking-wider">// Topshiriq Maslahati (Challenge Hint)</span>
-          
-          <div v-if="challenge.hintUsed" class="p-3 bg-[#0B1020]/80 rounded border border-cyber-secondary/30 text-slate-300">
-            <span class="text-cyber-secondary font-bold uppercase block mb-1">MASLAHAT KEYI:</span>
-            <p class="italic text-xs font-sans text-slate-200">{{ challenge.challengeHint }}</p>
-          </div>
-          
-          <div v-else class="space-y-2">
-            <p class="text-[10px] text-yellow-500 uppercase tracking-wider font-bold animate-pulse font-mono">
-              ⚠️ Using this hint will permanently reduce this challenge score by 20% for your team.
-            </p>
-            <button
-              type="button"
-              @click="confirmAndUnlockHint"
-              :disabled="isUnlockingHint"
-              class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded uppercase tracking-wider transition disabled:opacity-50 text-[10px] font-mono"
-            >
-              {{ isUnlockingHint ? 'MASLAHAT OCHILMOQDA...' : 'Maslahatni ochish (20% Jarima)' }}
-            </button>
-          </div>
-        </div>
+
 
         <!-- SECTION 1: QUESTIONS AREA -->
         <div v-if="challenge.questions && challenge.questions.length > 0" class="space-y-4">
