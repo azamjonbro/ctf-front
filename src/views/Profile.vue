@@ -150,27 +150,62 @@
         <div class="lg:col-span-2 glass-panel p-6 rounded-lg space-y-4">
           <h2 class="text-sm font-bold font-mono text-white border-b border-white/5 pb-2 uppercase">// Operator faoliyati taqvimi</h2>
           
-          <!-- Simple CSS Git grid display mock -->
           <div class="p-4 bg-cyber-bg/50 rounded border border-white/5">
-            <div class="grid grid-flow-col grid-rows-7 gap-1 overflow-x-auto select-none" style="grid-template-columns: repeat(53, minmax(10px, 1fr));">
-              <!-- Render 371 activity blocks (53 weeks * 7 days) -->
-              <div
-                v-for="day in calendarDays"
-                :key="day.dateStr"
-                class="w-2.5 h-2.5 rounded-sm transition"
-                :class="getActivityColor(day.count)"
-                :title="day.count > 0 ? `${day.dateStr}: ${day.count} ta faoliyat` : `${day.dateStr}: faoliyat yo'q`"
-              ></div>
+            <div class="overflow-x-auto select-none scrollbar-hide pb-2">
+              <div class="min-w-[650px] font-mono text-[9px] text-slate-500">
+                <!-- Month Row -->
+                <div class="grid grid-cols-[30px_repeat(53,_1fr)] gap-[3px] mb-1">
+                  <div></div> <!-- Space for day labels -->
+                  <div 
+                    v-for="col in 53" 
+                    :key="col"
+                    class="text-left leading-none h-3 select-none text-slate-400 font-bold"
+                  >
+                    <span v-if="getMonthLabelForWeek(col - 1)">
+                      {{ getMonthLabelForWeek(col - 1) }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Main Grid: Day Labels + Week Columns -->
+                <div class="grid grid-cols-[30px_repeat(53,_1fr)] gap-[3px]">
+                  <!-- Day Labels -->
+                  <div class="grid grid-rows-7 gap-[3px] text-left pr-1 select-none">
+                    <div class="h-2.5 flex items-center"></div>
+                    <div class="h-2.5 flex items-center">Mon</div>
+                    <div class="h-2.5 flex items-center"></div>
+                    <div class="h-2.5 flex items-center">Wed</div>
+                    <div class="h-2.5 flex items-center"></div>
+                    <div class="h-2.5 flex items-center">Fri</div>
+                    <div class="h-2.5 flex items-center"></div>
+                  </div>
+
+                  <!-- 53 Week Columns -->
+                  <div 
+                    v-for="(week, wIndex) in calendarWeeks" 
+                    :key="wIndex"
+                    class="grid grid-rows-7 gap-[3px]"
+                  >
+                    <div
+                      v-for="day in week"
+                      :key="day.dateStr"
+                      class="w-2.5 h-2.5 rounded-sm transition cursor-pointer hover:scale-125 hover:shadow-[0_0_8px_rgba(0,255,136,0.6)]"
+                      :class="getActivityColor(day.count)"
+                      :title="day.count > 0 ? `${day.dateStr}: ${day.count} ta faoliyat` : `${day.dateStr}: faoliyat yo'q`"
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            <div class="flex justify-between items-center text-[10px] text-slate-500 font-mono mt-4">
+            <div class="flex justify-between items-center text-[10px] text-slate-500 font-mono mt-4 border-t border-white/5 pt-3">
               <span>Oxirgi 12 oylik faoliyat</span>
-              <div class="flex items-center space-x-1">
+              <div class="flex items-center space-x-1.5">
                 <span>Kamroq</span>
-                <div class="w-2 h-2 rounded-sm bg-slate-800"></div>
-                <div class="w-2 h-2 rounded-sm bg-cyber-primary/20"></div>
-                <div class="w-2 h-2 rounded-sm bg-cyber-primary/50"></div>
-                <div class="w-2 h-2 rounded-sm bg-cyber-primary"></div>
+                <div class="w-2.5 h-2.5 rounded-sm bg-slate-800"></div>
+                <div class="w-2.5 h-2.5 rounded-sm bg-cyber-primary/20"></div>
+                <div class="w-2.5 h-2.5 rounded-sm bg-cyber-primary/50"></div>
+                <div class="w-2.5 h-2.5 rounded-sm bg-cyber-primary"></div>
                 <span>Ko'proq</span>
               </div>
             </div>
@@ -539,6 +574,38 @@ const calendarDays = computed(() => {
   }
   return days;
 });
+
+const calendarWeeks = computed(() => {
+  const days = calendarDays.value;
+  const weeks = [];
+  for (let i = 0; i < 53; i++) {
+    weeks.push(days.slice(i * 7, (i + 1) * 7));
+  }
+  return weeks;
+});
+
+const getMonthLabelForWeek = (wIndex) => {
+  const weeks = calendarWeeks.value;
+  if (!weeks[wIndex] || weeks[wIndex].length === 0) return '';
+  
+  const currentWeekDate = new Date(weeks[wIndex][0].dateStr);
+  const currentMonth = currentWeekDate.getMonth();
+  
+  if (wIndex === 0) {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return monthNames[currentMonth];
+  }
+  
+  const prevWeekDate = new Date(weeks[wIndex - 1][0].dateStr);
+  const prevMonth = prevWeekDate.getMonth();
+  
+  if (currentMonth !== prevMonth) {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return monthNames[currentMonth];
+  }
+  
+  return '';
+};
 
 const getActivityColor = (count) => {
   if (count === 0) return 'bg-slate-800';
