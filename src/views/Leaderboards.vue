@@ -40,14 +40,14 @@
             <table class="w-full text-left text-sm border-collapse font-mono">
               <thead>
                 <tr class="border-b border-white/10 text-xs font-mono uppercase text-slate-400 bg-white/5">
-                  <th class="py-3 px-4">🏆 O'rin</th>
+                  <th class="py-3 px-4">O'rin</th>
                   <th class="py-3 px-4">Nomi</th>
-                  <th class="py-3 px-4 text-center">⚡ Ballar</th>
-                  <th class="py-3 px-4 text-center">🚩 Flaglar</th>
-                  <th class="py-3 px-4 text-center">📝 Savollar</th>
-                  <th class="py-3 px-4 text-center">✅ Yechilgan</th>
-                  <th class="py-3 px-4">⏱️ Tugallash vaqti</th>
-                  <th class="py-3 px-4 text-center">📊 O'zgarish</th>
+                  <th class="py-3 px-4 text-center">Jami Ballar</th>
+                  <th class="py-3 px-4 text-center">Flaglar</th>
+                  <th class="py-3 px-4 text-center">Savollar</th>
+                  <th class="py-3 px-4 text-center">Jami yechilgan</th>
+                  <th class="py-3 px-4">Tugallash vaqti</th>
+                  <th class="py-3 px-4 text-center">O'zgarish</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/5">
@@ -72,15 +72,13 @@
                       #{{ item.ranking && item.ranking !== 999999 ? item.ranking : index + 1 }}
                     </span>
                   </td>
-                  <td class="py-3.5 px-4 font-bold text-white">
+                  <td class="py-3.5 px-4 font-semibold text-white">
                     <div class="flex items-center space-x-2">
-                      <span v-if="activeTab === 'users'" class="text-base select-none" :title="item.country || 'Global'">
-                        {{ getCountryFlag(item.country) }}
-                      </span>
+                      <span v-if="activeTab === 'users'" class="text-slate-400 text-xs">[{{ item.country || 'WW' }}]</span>
                       <span>{{ activeTab === 'users' ? item.username : item.name }}</span>
                     </div>
                   </td>
-                  <td class="py-3.5 px-4 text-center font-bold text-cyber-secondary">{{ item.points }} Pts</td>
+                  <td class="py-3.5 px-4 text-center font-bold text-cyber-secondary">{{ item.points }}</td>
                   <td class="py-3.5 px-4 text-center text-cyber-primary font-bold">{{ item.solvedFlagsCount || 0 }}</td>
                   <td class="py-3.5 px-4 text-center text-cyber-accent font-bold">{{ item.solvedQuestionsCount || 0 }}</td>
                   <td class="py-3.5 px-4 text-center text-slate-300">{{ item.totalSolved || 0 }}</td>
@@ -180,17 +178,4 @@ onMounted(() => {
 watch(activeTab, () => {
   loadLeaderboard();
 });
-
-const getCountryFlag = (country) => {
-  if (!country) return '🌐';
-  const c = country.toLowerCase().trim();
-  if (c === 'uzbekistan' || c === 'uz') return '🇺🇿';
-  if (c === 'united states' || c === 'us' || c === 'usa') return '🇺🇸';
-  if (c === 'russia' || c === 'ru') return '🇷🇺';
-  if (c === 'kazakhstan' || c === 'kz') return '🇰🇿';
-  if (c === 'turkey' || c === 'tr') return '🇹🇷';
-  if (c === 'united kingdom' || c === 'uk' || c === 'gb') return '🇬🇧';
-  if (c === 'germany' || c === 'de') return '🇩🇪';
-  return '🌐';
-};
 </script>
