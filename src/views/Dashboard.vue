@@ -106,7 +106,7 @@ const stats = ref(null);
 // Skill categories radar chart config
 const chartSeries = ref([{
   name: 'Yechilganlar soni',
-  data: [0, 0, 0, 0, 0]
+  data: [0, 0, 0, 0, 0, 0, 0, 0, 0]
 }]);
 
 const chartOptions = ref({
@@ -116,10 +116,10 @@ const chartOptions = ref({
   },
   colors: ['#00FF88'],
   xaxis: {
-    categories: ['Web Exploitation', 'Reverse Engineering', 'Cryptography', 'Forensics', 'PWN'],
+    categories: ['Web Exploitation', 'Reverse Engineering', 'Cryptography', 'Forensics', 'PWN', 'Network Security', 'OSINT', 'Privilege Escalation', 'Active Directory'],
     labels: {
       style: {
-        colors: ['#64748B', '#64748B', '#64748B', '#64748B', '#64748B'],
+        colors: ['#64748B', '#64748B', '#64748B', '#64748B', '#64748B', '#64748B', '#64748B', '#64748B', '#64748B'],
         fontFamily: 'Inter'
       }
     }
@@ -144,7 +144,11 @@ const loadDashboardStats = async () => {
         skills['Reverse Engineering'] || 0,
         skills['Cryptography'] || 0,
         skills['Forensics'] || 0,
-        skills['PWN'] || 0
+        skills['PWN'] || 0,
+        skills['Network Security'] || 0,
+        skills['OSINT'] || 0,
+        skills['Privilege Escalation'] || 0,
+        skills['Active Directory'] || 0
       ]
     }];
   } catch (error) {
