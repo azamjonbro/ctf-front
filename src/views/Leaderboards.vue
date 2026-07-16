@@ -37,48 +37,60 @@
           </h2>
 
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm border-collapse">
+            <table class="w-full text-left text-sm border-collapse font-mono">
               <thead>
-                <tr class="border-b border-white/10 text-xs font-mono uppercase text-slate-400 tracking-wider">
-                  <th class="py-3 px-4">O'rin</th>
+                <tr class="border-b border-white/10 text-xs font-mono uppercase text-slate-400 bg-white/5">
+                  <th class="py-3 px-4">🏆 O'rin</th>
                   <th class="py-3 px-4">Nomi</th>
-                  <th class="py-3 px-4">Jami Ballar</th>
-                  <th class="py-3 px-4">Flaglar</th>
-                  <th class="py-3 px-4">Savollar</th>
-                  <th class="py-3 px-4">Jami yechilgan</th>
-                  <th class="py-3 px-4">Tugallash vaqti</th>
-                  <th class="py-3 px-4 text-center">O'zgarish</th>
+                  <th class="py-3 px-4 text-center">⚡ Ballar</th>
+                  <th class="py-3 px-4 text-center">🚩 Flaglar</th>
+                  <th class="py-3 px-4 text-center">📝 Savollar</th>
+                  <th class="py-3 px-4 text-center">✅ Yechilgan</th>
+                  <th class="py-3 px-4">⏱️ Tugallash vaqti</th>
+                  <th class="py-3 px-4 text-center">📊 O'zgarish</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/5">
                 <tr
                   v-for="(item, index) in (activeTab === 'users' ? userLeaderboard : teamLeaderboard)"
                   :key="item._id"
-                  class="hover:bg-white/5 transition"
-                  :class="{ 'bg-cyber-primary/5 border-l-2 border-cyber-primary': item._id === currentEntityId }"
+                  class="hover:bg-white/5 transition duration-150"
+                  :class="{
+                    'bg-cyber-primary/5 border-l-2 border-cyber-primary': item._id === currentEntityId,
+                    'bg-yellow-500/2 border-l border-yellow-500/10': index === 0 && item._id !== currentEntityId,
+                    'bg-cyber-secondary/2 border-l border-cyber-secondary/10': index === 1 && item._id !== currentEntityId,
+                    'bg-cyber-accent/2 border-l border-cyber-accent/10': index === 2 && item._id !== currentEntityId,
+                  }"
                 >
-                  <td class="py-4 px-4 font-mono font-bold text-white flex items-center space-x-2">
-                    <span :class="{'text-cyber-primary': index === 0, 'text-cyber-secondary': index === 1, 'text-cyber-accent': index === 2}">
+                  <td class="py-3.5 px-4 font-bold">
+                    <span :class="{
+                      'text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.4)]': index === 0,
+                      'text-cyber-secondary drop-shadow-[0_0_6px_rgba(0,180,255,0.4)]': index === 1,
+                      'text-cyber-accent drop-shadow-[0_0_6px_rgba(255,0,128,0.4)]': index === 2,
+                      'text-slate-400': index > 2
+                    }">
                       #{{ item.ranking && item.ranking !== 999999 ? item.ranking : index + 1 }}
                     </span>
                   </td>
-                  <td class="py-4 px-4 font-semibold text-white">
+                  <td class="py-3.5 px-4 font-bold text-white">
                     <div class="flex items-center space-x-2">
-                      <span v-if="activeTab === 'users'" class="text-slate-400 text-xs">[{{ item.country || 'WW' }}]</span>
+                      <span v-if="activeTab === 'users'" class="text-base select-none" :title="item.country || 'Global'">
+                        {{ getCountryFlag(item.country) }}
+                      </span>
                       <span>{{ activeTab === 'users' ? item.username : item.name }}</span>
                     </div>
                   </td>
-                  <td class="py-4 px-4 font-mono text-cyber-secondary font-bold">{{ item.points }}</td>
-                  <td class="py-4 px-4 font-mono text-cyber-primary">{{ item.solvedFlagsCount || 0 }}</td>
-                  <td class="py-4 px-4 font-mono text-cyber-accent">{{ item.solvedQuestionsCount || 0 }}</td>
-                  <td class="py-4 px-4 font-mono text-slate-300">{{ item.totalSolved || 0 }}</td>
-                  <td class="py-4 px-4 font-mono text-slate-400">
+                  <td class="py-3.5 px-4 text-center font-bold text-cyber-secondary">{{ item.points }} Pts</td>
+                  <td class="py-3.5 px-4 text-center text-cyber-primary font-bold">{{ item.solvedFlagsCount || 0 }}</td>
+                  <td class="py-3.5 px-4 text-center text-cyber-accent font-bold">{{ item.solvedQuestionsCount || 0 }}</td>
+                  <td class="py-3.5 px-4 text-center text-slate-300">{{ item.totalSolved || 0 }}</td>
+                  <td class="py-3.5 px-4 text-slate-400 text-xs">
                     {{ activeTab === 'users' ? (item.finishTime ? new Date(item.finishTime).toLocaleString() : '—') : (item.finishTime || '—') }}
                   </td>
-                  <td class="py-4 px-4 text-center font-mono text-xs">
+                  <td class="py-3.5 px-4 text-center font-bold text-xs">
                     <span v-if="item.positionChange > 0" class="text-cyber-primary">+{{ item.positionChange }} ▲</span>
                     <span v-else-if="item.positionChange < 0" class="text-cyber-danger">{{ item.positionChange }} ▼</span>
-                    <span v-else class="text-slate-500">-</span>
+                    <span v-else class="text-slate-600">-</span>
                   </td>
                 </tr>
               </tbody>
@@ -168,4 +180,17 @@ onMounted(() => {
 watch(activeTab, () => {
   loadLeaderboard();
 });
+
+const getCountryFlag = (country) => {
+  if (!country) return '🌐';
+  const c = country.toLowerCase().trim();
+  if (c === 'uzbekistan' || c === 'uz') return '🇺🇿';
+  if (c === 'united states' || c === 'us' || c === 'usa') return '🇺🇸';
+  if (c === 'russia' || c === 'ru') return '🇷🇺';
+  if (c === 'kazakhstan' || c === 'kz') return '🇰🇿';
+  if (c === 'turkey' || c === 'tr') return '🇹🇷';
+  if (c === 'united kingdom' || c === 'uk' || c === 'gb') return '🇬🇧';
+  if (c === 'germany' || c === 'de') return '🇩🇪';
+  return '🌐';
+};
 </script>
