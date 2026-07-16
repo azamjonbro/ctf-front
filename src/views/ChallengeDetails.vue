@@ -188,7 +188,7 @@
                     <select
                       v-if="q.type === 'multiple-choice'"
                       v-model="questionSubmissions[q.id]"
-                      class="flex-1 bg-[#131C35] border border-white/10 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyber-primary font-mono"
+                      class="flex-1 bg-[#131C35] border border-white/10 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyber-primary font-mono luxury-select"
                       required
                     >
                       <option value="" disabled selected>Variantni tanlang</option>
